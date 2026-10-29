@@ -221,7 +221,7 @@ export class MatchEngine{
   if(this.pendingCornerHeader===p.id){this.pendingCornerHeader=null;this.add('header',side,`${p.name} se eleva para cabecear el córner.`,p);this.shoot(p,false,false,true);return}
   const dGoal=hypot(p.x-goal,(p.y-34)*1.2);
   const nearest=this.nearest(1-side,p.x,p.y,q=>q.i!==0),press=nearest?dist(p,nearest):25;
-  if(dGoal<27&&this.rng()<(dGoal<15?.64:.31)){this.shoot(p);return}
+  if(dGoal<31&&this.rng()<(dGoal<16?.73:.40)){this.shoot(p);return}
   if(press<4&&this.rng()<.08){this.foul(p,nearest);return}
   if(press<3.1&&this.rng()<.2){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
   if((dGoal>35&&this.rng()<.08)||(press>5&&this.rng()<.15)){this.decision=this.random(.55,.9);return}
