@@ -1,4 +1,4 @@
-import {buildLineup,buildBench} from './teams.js';
+import {buildLineup,buildBench} from './teams.js?v=0.2.2';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);

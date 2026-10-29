@@ -1,7 +1,10 @@
-import {LEAGUES,TEAMS} from './teams.js';
-import {MatchEngine} from './engine.js';
-import {PitchRenderer} from './render.js';
+import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.2.2';
+import {MatchEngine} from './engine.js?v=0.2.2';
+import {PitchRenderer} from './render.js?v=0.2.2';
 const $=q=>document.querySelector(q);
+// The displayed revision proves which ratings dataset the browser has loaded.
+const revisionLabel=document.getElementById('ratings-revision');
+if(revisionLabel)revisionLabel.textContent=RATINGS_REVISION;
 const by=id=>document.getElementById(id);
 const show=(el,on)=>el.classList.toggle('hidden',!on);
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
