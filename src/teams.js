@@ -26,13 +26,79 @@ export const SLOTS={
  '4231':[['GK',5,34],['RB',21,57],['CB',18,42],['CB',18,26],['LB',21,11],['DM',40,43],['DM',40,25],['RW',65,56],['AM',62,34],['LW',65,12],['ST',78,34]],
  '352':[['GK',5,34],['CB',18,52],['CB',17,34],['CB',18,16],['RWB',43,61],['LWB',43,7],['DM',41,34],['CM',53,47],['CM',53,21],['ST',77,44],['ST',77,24]]
 };
+// Player OVRs are explicitly curated per player, NOT calculated from squad order or shirt number.
+// Ratings remain independent editorial estimates unless a player has a verified EA FC 27 entry.
+// Values follow the exact order of each team's starting XI above.
+const STARTING_OVR={
+ arsenal:[85,82,88,88,83,84,87,86,87,85,85],
+ liverpool:[89,83,88,85,82,85,84,85,86,88,83],
+ mancity:[89,77,87,83,84,80,87,85,84,91,86],
+ chelsea:[84,83,82,81,78,88,80,83,86,81,83],
+ barca:[83,85,85,82,82,90,90,86,90,82,89],
+ madrid:[90,86,83,84,83,85,88,90,85,91,89],
+ atleti:[87,80,82,83,86,83,82,81,82,84,87],
+ bayern:[85,82,84,83,82,86,81,88,90,90,85],
+ dortmund:[85,79,80,84,78,80,79,78,79,84,79],
+ leverkusen:[82,79,79,84,79,82,80,80,81,83,78],
+ inter:[79,83,83,87,78,86,85,86,79,88,83],
+ milan:[86,82,78,81,80,84,83,78,84,82,79],
+ juve:[85,81,85,79,82,84,81,81,81,81,85],
+ psg:[83,85,84,86,89,85,90,84,90,82,89],
+ monaco:[81,80,80,79,75,82,80,80,83,77,82],
+ marseille:[77,79,77,82,79,83,79,79,82,82,77]
+};
+const BENCH_OVR={
+ arsenal:[80,79,82,83,81], liverpool:[84,80,80,81,79],
+ mancity:[79,79,82,83,81], chelsea:[78,78,82,80,80],
+ barca:[80,84,83,84,81], madrid:[81,85,82,82,81],
+ atleti:[79,82,81,84,81], bayern:[76,82,81,81,79],
+ dortmund:[78,79,79,80,79], leverkusen:[77,80,79,77,79],
+ inter:[74,78,80,81,78], milan:[77,78,79,84,79],
+ juve:[79,78,78,80,81], psg:[79,83,79,82,83],
+ monaco:[79,78,77,80,78], marseille:[79,79,77,80,78]
+};
+// The following individual four-attribute profiles are from the published FC 27
+// launch database: https://www.ea.com/games/ea-sports-fc/ratings
+// Overall values for these players above match that database.
+const VERIFIED_SKILLS={
+ 'Erling Haaland':{pace:87,shot:92,pass:71,tackle:47},
+ 'Alejandro Balde':{pace:90,shot:52,pass:75,tackle:77},
+ 'Frenkie de Jong':{pace:77,shot:70,pass:85,tackle:77},
+ 'Pedri':{pace:76,shot:75,pass:89,tackle:77},
+ 'Lamine Yamal':{pace:86,shot:84,pass:87,tackle:38},
+ 'Kylian Mbappe':{pace:96,shot:91,pass:80,tackle:29},
+ 'Harry Kane':{pace:62,shot:94,pass:83,tackle:49},
+ 'Rodri':{pace:62,shot:78,pass:86,tackle:85},
+ 'Michael Olise':{pace:83,shot:82,pass:89,tackle:47},
+ 'Jude Bellingham':{pace:79,shot:86,pass:83,tackle:79},
+ 'Vinicius Junior':{pace:93,shot:85,pass:80,tackle:31},
+ 'Khvicha Kvaratskhelia':{pace:86,shot:85,pass:84,tackle:59},
+ 'Nuno Mendes':{pace:94,shot:77,pass:80,tackle:84},
+ 'Ousmane Dembele':{pace:90,shot:89,pass:83,tackle:55},
+ 'Vitinha':{pace:72,shot:81,pass:88,tackle:75}
+};
+const ROLE_OFFSETS={
+ GK:[-33,-24,-52,-34],RB:[6,-4,-26,1],LB:[6,-4,-26,1],
+ CB:[-7,-10,-33,5],RWB:[6,-3,-22,-1],LWB:[6,-3,-22,-1],
+ DM:[-6,2,-17,2],CM:[-3,3,-11,-7],AM:[2,3,0,-22],
+ RW:[6,-1,-1,-35],LW:[6,-1,-1,-35],ST:[1,-13,7,-38]
+};
+const bound=(n)=>Math.min(97,Math.max(24,Math.round(n)));
+function estimatedSkills(name,role,rating){
+ const official=VERIFIED_SKILLS[name];
+ if(official)return {...official};
+ const m=ROLE_OFFSETS[role]||ROLE_OFFSETS.CM;
+ return {pace:bound(rating+m[0]),pass:bound(rating+m[1]),shot:bound(rating+m[2]),tackle:bound(rating+m[3])};
+}
 export function buildLineup(team, side){
- const slots=SLOTS[team.formation]; return team.players.map((p,i)=>({
- id:side+'-'+i,side,i,name:p.name,number:p.number,role:slots[i][0],anchor:{x:slots[i][1],y:slots[i][2]},
- rating:Math.max(69,Math.min(94,team.rating+(i===0?1:0)+((p.number*13+i*7)%9)-4)),
- skills:{pace:Math.max(65,Math.min(95,team.rating+(i%5)*2-3)),pass:Math.max(65,Math.min(95,team.rating+(i%7)-3)),shot:Math.max(53,Math.min(96,team.rating+(i>=8?4:-18))),tackle:Math.max(54,Math.min(95,team.rating+(i<5?3:-15)))},
- x:0,y:0,fx:0,fy:0,face:0,energy:1,card:false
- }));
+ const slots=SLOTS[team.formation],overalls=STARTING_OVR[team.id];
+ if(!overalls||overalls.length!==team.players.length)throw Error('Missing or invalid individual ratings for '+team.id);
+ return team.players.map((p,i)=>{
+  const role=slots[i][0],rating=overalls[i];
+  return {id:side+'-'+i,side,i,name:p.name,number:p.number,role,
+   anchor:{x:slots[i][1],y:slots[i][2]},rating,skills:estimatedSkills(p.name,role,rating),
+   x:0,y:0,fx:0,fy:0,face:0,energy:1,card:false};
+ });
 }
 
 // Small illustrative substitute lists for laboratory rotation. These are editorial
@@ -58,7 +124,11 @@ const RESERVES={
 const group=role=>role==='GK'?'GK':['RB','LB','CB','RWB','LWB'].includes(role)?'DEF':['DM','CM','AM'].includes(role)?'MID':'ATT';
 export function buildBench(team,side){
  const raw=(RESERVES[team.id]||'').split(';');const taken=new Set(team.players.map(p=>p.number));
- return raw.map((entry,i)=>{const [num,name,role]=entry.split('|');let number=Number(num);while(taken.has(number))number++;taken.add(number);
- return {id:`${side}-bench-${i}`,side,i:11+i,name,number,role,group:group(role),anchor:{x:48,y:34},rating:Math.max(70,team.rating-5+(i%4)),skills:{pace:Math.max(65,team.rating-3),pass:Math.max(65,team.rating-4),shot:group(role)==='ATT'?team.rating-2:67,tackle:group(role)==='DEF'?team.rating-2:63},x:52.5,y:34,fx:52.5,fy:34,energy:1,card:false,red:false};
+ return raw.map((entry,i)=>{
+ const [num,name,role]=entry.split('|');let number=Number(num);while(taken.has(number))number++;taken.add(number);
+ const rating=BENCH_OVR[team.id]?.[i]??Math.max(68,team.rating-6);
+ return {id:`${side}-bench-${i}`,side,i:11+i,name,number,role,group:group(role),
+ anchor:{x:48,y:34},rating,skills:estimatedSkills(name,role,rating),
+ x:52.5,y:34,fx:52.5,fy:34,energy:1,card:false,red:false};
  });
 }
