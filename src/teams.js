@@ -34,3 +34,31 @@ export function buildLineup(team, side){
  x:0,y:0,fx:0,fy:0,face:0,energy:1,card:false
  }));
 }
+
+// Small illustrative substitute lists for laboratory rotation. These are editorial
+// sample choices, NOT verified official match-day benches for October 2026.
+const RESERVES={
+ arsenal:'13|Kepa Arrizabalaga|GK;49|Myles Lewis-Skelly|LB;11|Gabriel Martinelli|LW;29|Kai Havertz|ST;23|Mikel Merino|CM',
+ liverpool:'25|Giorgi Mamardashvili|GK;2|Joe Gomez|CB;17|Curtis Jones|CM;18|Cody Gakpo|LW;14|Federico Chiesa|RW',
+ mancity:'18|Stefan Ortega|GK;27|Matheus Nunes|RB;8|Mateo Kovacic|CM;20|Bernardo Silva|AM;26|Savinho|RW',
+ chelsea:'12|Filip Jorgensen|GK;5|Benoit Badiashile|CB;8|Enzo Fernandez|CM;11|Noni Madueke|RW;18|Christopher Nkunku|ST',
+ barca:'13|Wojciech Szczesny|GK;4|Ronald Araujo|CB;6|Gavi|CM;20|Dani Olmo|AM;7|Ferran Torres|ST',
+ madrid:'13|Andriy Lunin|GK;22|Antonio Rudiger|CB;6|Eduardo Camavinga|CM;15|Arda Guler|AM;16|Brahim Diaz|RW',
+ atleti:'1|Juan Musso|GK;2|Jose Maria Gimenez|CB;5|Rodrigo de Paul|CM;7|Antoine Griezmann|AM;9|Alexander Sorloth|ST',
+ bayern:'26|Sven Ulreich|GK;3|Kim Min-jae|CB;8|Leon Goretzka|CM;7|Serge Gnabry|RW;11|Kingsley Coman|LW',
+ dortmund:'33|Alexander Meyer|GK;5|Ramy Bensebaini|CB;13|Pascal Gross|CM;10|Julian Brandt|AM;27|Karim Adeyemi|ST',
+ leverkusen:'28|Janis Blaswich|GK;5|Loic Bade|CB;7|Jonas Hofmann|AM;21|Amine Adli|RW;9|Martin Hlozek|ST',
+ inter:'12|Raffaele Di Gennaro|GK;15|Francesco Acerbi|CB;22|Henrikh Mkhitaryan|CM;7|Piotr Zielinski|CM;11|Luis Henrique|ST',
+ milan:'57|Marco Sportiello|GK;46|Matteo Gabbia|CB;29|Youssouf Fofana|CM;10|Rafael Leao|LW;7|Santiago Gimenez|ST',
+ juve:'1|Mattia Perin|GK;6|Lloyd Kelly|CB;16|Weston McKennie|CM;11|Nicolas Gonzalez|RW;18|Dusan Vlahovic|ST',
+ psg:'39|Matvey Safonov|GK;21|Lucas Hernandez|CB;33|Warren Zaire-Emery|CM;14|Desire Doue|RW;29|Bradley Barcola|LW',
+ monaco:'16|Philipp Kohn|GK;5|Thilo Kehrer|CB;4|Jordan Teze|RB;17|Eliesse Ben Seghir|AM;36|Breel Embolo|ST',
+ marseille:'12|Geronimo Rulli|GK;5|Leonardo Balerdi|CB;6|Valentin Rongier|CM;10|Mason Greenwood|RW;8|Amine Harit|AM'
+};
+const group=role=>role==='GK'?'GK':['RB','LB','CB','RWB','LWB'].includes(role)?'DEF':['DM','CM','AM'].includes(role)?'MID':'ATT';
+export function buildBench(team,side){
+ const raw=(RESERVES[team.id]||'').split(';');const taken=new Set(team.players.map(p=>p.number));
+ return raw.map((entry,i)=>{const [num,name,role]=entry.split('|');let number=Number(num);while(taken.has(number))number++;taken.add(number);
+ return {id:`${side}-bench-${i}`,side,i:11+i,name,number,role,group:group(role),anchor:{x:48,y:34},rating:Math.max(70,team.rating-5+(i%4)),skills:{pace:Math.max(65,team.rating-3),pass:Math.max(65,team.rating-4),shot:group(role)==='ATT'?team.rating-2:67,tackle:group(role)==='DEF'?team.rating-2:63},x:52.5,y:34,fx:52.5,fy:34,energy:1,card:false,red:false};
+ });
+}

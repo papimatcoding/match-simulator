@@ -22,6 +22,14 @@ export class PitchRenderer{
  }
  render(engine){if(!this.w||!engine)return;const ctx=this.ctx;ctx.clearRect(0,0,this.w,this.h);this.field(engine);
   const S=this.scale;
+  // A flagged through ball freezes the defensive offside line at pass release.
+  if(engine.offsideMark?.ttl>0){
+   const [xx]=this.point(engine.offsideMark.x,34);
+   ctx.save();ctx.strokeStyle='#ffce6b';ctx.lineWidth=2;ctx.setLineDash([7,6]);
+   ctx.beginPath();ctx.moveTo(xx,this.py);ctx.lineTo(xx,this.py+68*S);ctx.stroke();
+   ctx.setLineDash([]);ctx.fillStyle='#fff4ce';ctx.font='bold 12px system-ui';ctx.textAlign='left';
+   ctx.fillText('LÍNEA DE FUERA DE JUEGO',Math.min(xx+8,this.w-214),this.py+15);ctx.restore();
+  }
   for(const side of [0,1])for(const p of engine.teams[side]){
    if(p.red)continue;
    const [x,y]=this.point(p.x,p.y),color=engine.clubs[side].color;

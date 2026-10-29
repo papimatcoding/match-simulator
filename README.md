@@ -1,4 +1,4 @@
-# MatchLab · prototipo 0.1
+# MatchLab · alfa 0.2 (reglas y toma de decisiones)
 
 Laboratorio independiente del proyecto FUERA DE GUIÓN. Selección de dos equipos y simulación 11 contra 11 en Canvas 2D con 300 segundos de duración real aproximada a velocidad 1×.
 
@@ -9,11 +9,11 @@ No requiere instalar nada: abre GitHub Pages. Para desarrollo local, sirve la ca
 ## Arquitectura
 
 - `src/teams.js`: plantillas y ratings *estimados*, con 16 equipos de las cinco grandes ligas.
-- `src/engine.js`: motor de estado determinista con semilla, 22 agentes, balón en posesión/vuelo, pase espacial, presión, disparo, eventos, estadísticas, fueras de juego, faltas, tarjetas, córners y penaltis. El reloj simulado avanza 18 segundos por cada segundo de representación.
-- `src/render.js`: campo y jugadores en Canvas de escala uniforme, independiente de las estadísticas.
+- `src/engine.js`: motor determinista con semilla, 22 agentes, balón en posesión/vuelo, pase espacial, desmarques, presión, tiros con desenlace espacial, fueras de juego con línea visible, faltas directas, tarjetas, córners, penaltis, saques de banda, cambios reales y tiempo añadido simplificado. El reloj simulado avanza 18 segundos por cada segundo de representación.
+- `src/render.js`: campo y jugadores en Canvas de escala uniforme; traza línea temporal del fuera de juego y distingue desplazamiento de disparos parados.
 - `src/app.js`: selección de equipos, alineaciones, velocidades 0.5×/1×/2×/4×, pausa, descanso, marcador, acta y estadísticas.
 
-**Alcance honesto:** es un primer motor espacial experimental, no una simulación de fútbol comercial. La velocidad del tiempo del partido no corresponde 1:1 con la velocidad física de los jugadores, y todavía faltan sustituciones, saques de banda detallados, ley de la ventaja, manos y las reglas completas del VAR. Algunas reglas (por ejemplo fueras de juego, sanciones, cambios de posesión) están simplificadas. El motor no modifica ni lee los guardados de FUERA DE GUIÓN.
+**Alcance honesto:** es un primer motor espacial experimental, no una simulación de fútbol comercial. La velocidad del tiempo del partido no corresponde 1:1 con la velocidad física de los jugadores, y todavía faltan ley de la ventaja, manos, VAR, sustituciones por lesión, un banquillo completo y reglas arbitrales más sofisticadas. Las sustituciones son automáticas en tres ventanas de juego y se realizan en las interrupciones; los cinco suplentes por club son ejemplos editoriales ilustrativos, **no** banquillos reales verificados. Algunas reglas (por ejemplo fueras de juego, faltas, cambios de posesión) están simplificadas. El motor no modifica ni lee los guardados de FUERA DE GUIÓN.
 
 ## Datos
 
@@ -36,3 +36,18 @@ Las 16 alineaciones son **onces propuestos para este experimento**, elegidos de 
 ## Métricas y criterios para integrar en carrera
 
 Pendiente superar pruebas repetidas de: cero teletransportes del balón durante juego activo, goles = lanzamientos con autor del club correcto, no asistencia en penalti, en saque de banda/parado solo reubicación tras parada, campo sin deformación, cambio de campo al descanso, balance estadístico razonable y buen rendimiento móvil. Se mantiene separado hasta que sea estable.
+
+
+## Cambios de alfa 0.2
+
+- Pases: selección de receptor ponderada por progreso, espacio, cobertura y riesgo de interceptación; desmarques hacia carriles libres y menor superposición entre jugadores.
+- Remates: el balón de una parada termina **por delante** de la línea de gol, en las proximidades del portero. El gol y los tiros desviados tienen trayectorias distintas.
+- Banda: los despejes y malos controles cercanos a la línea provocan un vuelo hacia fuera, seguido del saque de banda del equipo contrario; no existe fuera de juego en la recepción directa.
+- Córner: cinco o más futbolistas atacantes entran en el área; centro y cabezazo o remate son acciones sucesivas.
+- Faltas: el lanzador puede tirar directamente desde una distancia razonable y la barrera se prepara durante la interrupción. No hay asistencia en un gol directo.
+- Cambio: rotaciones automáticas en interrupciones alrededor de los minutos 56, 68 y 79, con sustitución efectiva del jugador que ocupa la demarcación.
+- Final de periodo: el árbitro deja completar un lanzamiento o ataque muy peligroso, con una ampliación máxima deliberadamente corta. **No reproduce el descuento oficial**, que se calcula según otras circunstancias.
+- Offside: se mide la posición al salir el pase; se pita cuando el receptor interviene. Una línea temporal ayuda a comprender la decisión. La regla de interferencia de un atacante que no recibe directamente sigue simplificada.
+- Automatización: pruebas unitarias y de múltiples partidos para impedir goles sin tirador, asistencias en penaltis y saques imposibles.
+
+Referencia de las reglas aplicadas de forma simplificada: [IFAB Ley 7](https://www.theifab.com/laws/latest/the-duration-of-the-match/), [IFAB Ley 11](https://www.theifab.com/laws/latest/offside/), [IFAB Ley 17](https://www.theifab.com/laws/latest/the-corner-kick/).
