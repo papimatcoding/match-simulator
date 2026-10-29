@@ -1,4 +1,4 @@
-# MatchLab · alfa 0.2 (reglas y toma de decisiones)
+# MatchLab · alfa 0.2.3 (decisiones y posicionamiento)
 
 Laboratorio independiente del proyecto FUERA DE GUIÓN. Selección de dos equipos y simulación 11 contra 11 en Canvas 2D con 300 segundos de duración real aproximada a velocidad 1×.
 
@@ -51,3 +51,17 @@ Pendiente superar pruebas repetidas de: cero teletransportes del balón durante 
 - Automatización: pruebas unitarias y de múltiples partidos para impedir goles sin tirador, asistencias en penaltis y saques imposibles.
 
 Referencia de las reglas aplicadas de forma simplificada: [IFAB Ley 7](https://www.theifab.com/laws/latest/the-duration-of-the-match/), [IFAB Ley 11](https://www.theifab.com/laws/latest/offside/), [IFAB Ley 17](https://www.theifab.com/laws/latest/the-corner-kick/).
+
+## Cambios de alfa 0.2.3
+
+- **Tiros razonados**: oportunidad estimada por distancia, ángulo, marcadores en la línea y calidad de remate. Disminuyen los tiros lejanos sin sentido; los atacantes consideran compañeros mejor colocados. El desenlace y la trayectoria siguen vinculados.
+- **Pases más intencionales**: más valor a progresar sin regalar el balón, teniendo en cuenta cobertura, presión, longitud y fuera de juego. Se evitan tanto la concatenación de pases exclusivamente hacia atrás como los pelotazos absurdos a una zona tapada.
+- **Juego sin balón**: extremos conservan amplitud, atacantes temporizan rupturas, mediocampistas crean triángulos y dos defensores presionan con intensidades distintas. Separación posicional adicional.
+- **Faltas directas**: barrera de cuatro situada a 9,15 m del balón, orientación hacia la portería, con otros defensores asignados a marcajes sobre potenciales rematadores (simplificado). Se respeta el metro de separación de la barrera.
+- **Saque de centro real**: ambos equipos se colocan en su mitad, balón en el punto central, lanzador y receptor disponibles, pase animado al reanudar; círculo resaltado con etiqueta para reconocer la reanudación.
+- **Equilibrio del laboratorio**: en una batería de 60 partidos distintos, alrededor de 11,6 remates y 2,3 goles por partido. Son cifras de la simulación, no estadísticas de una liga.
+- **Regresión**: cuatro nuevas pruebas de toma de decisiones, barrera y marcajes, saque de centro y separación de los futbolistas.
+
+Referencia: [IFAB Regla 13](https://www.theifab.com/es/laws/latest/free-kicks/) y [Regla 8](https://www.theifab.com/laws/latest/the-start-and-restart-of-play/).
+
+**Limitación:** un modelo espacial simple sigue siendo distinto a un simulador 3D profesional. La elección del disparo y del pase es heurística; la continuidad de los movimientos y de las interrupciones debe seguirse validando visualmente en diversos navegadores.

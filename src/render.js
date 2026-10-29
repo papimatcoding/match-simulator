@@ -46,6 +46,13 @@ export class PitchRenderer{
   ctx.beginPath();ctx.arc(bx,by,rad,0,7);ctx.fillStyle='#fffdf1';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#293e3b';ctx.stroke();
   ctx.beginPath();ctx.arc(bx,by,rad*.35,0,7);ctx.fillStyle='#23352e';ctx.fill();
   if(ball.flight){const [fx,fy]=this.point(ball.flight.start.x,ball.flight.start.y);ctx.beginPath();ctx.setLineDash([2,5]);ctx.moveTo(fx,fy);ctx.lineTo(bx,by);ctx.strokeStyle='#ffffff80';ctx.lineWidth=1.3;ctx.stroke();ctx.setLineDash([])}
+  if(engine.restart?.type==='kickoff'){
+   const [cx,cy]=this.point(52.5,34);
+   ctx.save();ctx.beginPath();ctx.arc(cx,cy,11*S,0,Math.PI*2);
+   ctx.strokeStyle='#f6eb8e9c';ctx.lineWidth=2;ctx.setLineDash([5,5]);ctx.stroke();ctx.setLineDash([]);
+   ctx.font='800 12px system-ui';ctx.textAlign='center';ctx.textBaseline='bottom';
+   ctx.fillStyle='#fff6c7';ctx.fillText('SAQUE DE CENTRO',cx,cy-12*S);ctx.restore();
+  }
   if(engine.goalFlash>0){ctx.save();ctx.globalAlpha=Math.min(.7,engine.goalFlash*.35);ctx.fillStyle='#bce77b';ctx.font=`900 ${Math.min(64,this.w*.10)}px system-ui`;ctx.textAlign='center';ctx.fillText('¡GOL!',this.w/2,this.h/2);ctx.restore()}
  }
 }

@@ -4,12 +4,12 @@ import {readFileSync} from 'node:fs';
 import {TEAMS,buildLineup,RATINGS_REVISION} from '../src/teams.js';
 const file = path => readFileSync(new URL(path,import.meta.url),'utf8');
 test('published module graph busts cached ratings from prior builds', () => {
- const version = '0.2.2';
+ const version = '0.2.3';
  assert.equal(RATINGS_REVISION,version);
- assert.match(file('../index.html'), /src\/app\.js\?v=0\.2\.2/);
- assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.2\.2/);
- assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.2\.2/);
- assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.2\.2/);
+ assert.match(file('../index.html'), /src\/app\.js\?v=0\.2\.3/);
+ assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.2\.3/);
+ assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.2\.3/);
+ assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.2\.3/);
  assert.match(file('../index.html'), /id="ratings-revision"/);
 });
 test('lineup screen data uses footballer-specific values, not team OVR or shirt',()=>{
