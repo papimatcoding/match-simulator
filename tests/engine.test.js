@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {TEAMS,LEAGUES} from '../src/teams.js';
+import {MatchEngine} from '../src/engine.js';
+const play=(seed=13,a=0,b=4)=>{let game=new MatchEngine(TEAMS[a],TEAMS[b],seed);game.start();let firstHalf=0;for(let i=0;i<11000;i++){if(game.status==='halftime'){firstHalf++;assert.equal(game.half,1);game.resumeHalf()}if(game.status==='finished')break;game.update(1/30);assert.ok(Number.isFinite(game.ball.x)&&Number.isFinite(game.ball.y));assert.ok(game.ball.x>=-.9&&game.ball.x<=105.9);assert.ok(game.ball.y>=0&&game.ball.y<=68);}
+ assert.equal(game.status,'finished');assert.equal(firstHalf,1);return game;};
+test('five major leagues and unique real rosters',()=>{assert.equal(new Set(TEAMS.map(t=>t.id)).size,TEAMS.length);assert.equal(new Set(TEAMS.map(t=>t.league)).size,5);assert.equal(LEAGUES.length,5);for(const t of TEAMS){assert.equal(t.players.length,11,t.name);assert.equal(new Set(t.players.map(p=>p.number)).size,11,t.name);assert.ok(t.players.every(p=>p.name&&p.number>0),t.name);assert.ok(t.source.startsWith('https://'))}});
+test('match records and goals remain consistent',()=>{for(let seed=1;seed<=24;seed++){const a=(seed*3)%16,b=(a+4)%16,g=play(seed,a,b);
+ assert.equal(g.goals.length,g.stats[0].goals+g.stats[1].goals);
+ assert.equal(g.events.filter(e=>e.type==='goal').length,g.goals.length);
+ for(const goal of g.goals){assert.ok(g.teams[goal.side].some(p=>p.name===goal.scorer),'scorer must be on scoring team');assert.ok(!goal.penalty||!goal.assist,'penalties can never have assists')}
+ for(const s of g.stats){assert.ok(s.onTarget<=s.shots);assert.ok(s.goals<=s.onTarget);assert.ok(s.completed<=s.passes);assert.ok(s.xg>=0);}
+ }});
+test('deterministic seed produces same results and log',()=>{const a=play(123),b=play(123);assert.deepEqual(a.goals,b.goals);assert.deepEqual(a.stats,b.stats);assert.deepEqual(a.events,b.events)});
+test('kickoff and half-time directional change',()=>{const g=new MatchEngine(TEAMS[0],TEAMS[1]);assert.equal(g.direction(0),1);assert.equal(g.direction(1),-1);g.start();while(g.status==='live')g.update(1/30);assert.equal(g.status,'halftime');g.resumeHalf();assert.equal(g.direction(0),-1);assert.equal(g.direction(1),1)});
+test('on-field shot is a flight; not a randomly added goal',()=>{const g=new MatchEngine(TEAMS[2],TEAMS[5],120);g.start();g.restart=null;const p=g.teams[0][9];p.x=92;p.y=34;g.ball.x=92;g.ball.y=34;g.hold(p);g.shoot(p);assert.ok(g.ball.flight);assert.equal(g.stats[0].goals,0);for(let i=0;i<60&&g.ball.flight;i++)g.updateFlight(1/60);assert.ok(g.stats[0].shots===1)});
+test('ball travels in small increments during a live pass',()=>{const g=new MatchEngine(TEAMS[0],TEAMS[4],101);g.start();g.restart=null;const a=g.teams[0][3],b=g.teams[0][5];a.x=30;a.y=20;b.x=46;b.y=30;g.ball.x=30;g.ball.y=20;g.hold(a);g.pass(a,b);assert.equal(g.ball.flight.type,'pass');let last={x:g.ball.x,y:g.ball.y};for(let i=0;i<120&&g.ball.flight;i++){g.updateFlight(1/60);const displacement=Math.hypot(g.ball.x-last.x,g.ball.y-last.y);assert.ok(displacement<2,'ball jumped by '+displacement);last={x:g.ball.x,y:g.ball.y}}});
+test('penalty setup positions ball at the correct spot',()=>{const g=new MatchEngine(TEAMS[0],TEAMS[1]);g.start();g.restartAt('penalty',0,{x:94,y:34},1.5);assert.equal(g.ball.x,94);assert.equal(g.ball.y,34);assert.equal(g.restart.type,'penalty');assert.ok(g.kicker(g.restart).role==='ST')});
