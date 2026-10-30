@@ -2,7 +2,7 @@
 // Players encoded as "number|name". Positions come from the declared 4-3-3 / 4-2-3-1 / 3-5-2 template.
 const R = (str) => str.split(';').map(item => {const [number,name] = item.trim().split('|');return {number:Number(number),name};});
 const T=(id,name,league,rating,style,color,formation,raw,source)=>({id,name,league,rating,style,color,formation,players:R(raw),source,ratings:{attack:Math.min(94,rating+(style==='vertical'?2:1)),midfield:Math.min(94,rating+(style==='posesion'?2:0)),defense:Math.min(94,rating+(style==='bloque'?2:0))}});
-export const RATINGS_REVISION='0.2.4';
+export const RATINGS_REVISION='0.3.0';
 export const LEAGUES = ['Premier League','LaLiga','Bundesliga','Serie A','Ligue 1'];
 export const TEAMS = [
 T('arsenal','Arsenal','Premier League',88,'posesion','#ec364b','433','1|David Raya;12|Jurrien Timber;2|William Saliba;6|Gabriel Magalhaes;5|Piero Hincapie;36|Martin Zubimendi;41|Declan Rice;8|Martin Odegaard;7|Bukayo Saka;14|Viktor Gyokeres;10|Eberechi Eze','https://www.premierleague.com/en/news/4725682'),
