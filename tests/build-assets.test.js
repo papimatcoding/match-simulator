@@ -35,8 +35,8 @@ test('LaLiga completa y escalones de calidad para pruebas',()=>{
 });
 
 test('tactical presets are imported as a versioned module',()=>{
- assert.match(file('../src/app.js'),/tactics\\.js\\?v=0\\.3\\.0/);
- assert.match(file('../src/engine.js'),/tactics\\.js\\?v=0\\.3\\.0/);
+ assert.ok(file('../src/app.js').includes('tactics.js?v=0.3.0'));
+ assert.ok(file('../src/engine.js').includes('tactics.js?v=0.3.0'));
  assert.match(file('../index.html'),/id="tactic-home"/);
  assert.match(file('../index.html'),/id="live-tactic-home"/);
 });
