@@ -1,4 +1,5 @@
-# MatchLab 0.4.2 · Criterio de tiro, salidas seguras y desmarques
+# MatchLab 0.5 — Inteligencia colectiva y paredes
+
 
 
 
@@ -118,3 +119,14 @@ Quedan por verificar exhaustivamente los nombres y dorsales de los 33 onces y ba
 - Se conservan las plantillas revisadas y la detención visual de los cambios introducidas en 0.4.1.
 
 Las reglas de decisión de MatchLab son aproximaciones futbolísticas propias, no los algoritmos de EA Sports FC.
+
+## Versión 0.5.0 · Combinaciones y presión coordinada
+
+- Nuevo módulo `src/combinations.js` con una intención compartida de tres futbolistas: iniciador, apoyo para pared y corredor al espacio. El corredor se mueve con el motor físico; el balón viaja por la trayectoria real, sin teletransportes. Cuando el apoyo recibe y la línea sigue libre, devuelve el balón hacia una posición alcanzable del tercero.
+- La jugada se cancela si se pierde el balón, termina el tiempo de la intención, un jugador deja de estar disponible o aparece un defensor cerrando la devolución. Se comprueba fuera de juego antes de ejecutar el pase.
+- La probabilidad de organizar paredes depende de la identidad táctica: tiki-taka más frecuente, ofensiva intermedia, defensiva poco frecuente. En presión alta un segundo defensor busca interceptar el pase probable en lugar de perseguir exactamente al mismo poseedor.
+- Los receptores de pases en vuelo priorizan llegar al balón. Las instrucciones generales de posición ya no deben hacer que abandonen la recepción.
+- La interfaz muestra **paredes iniciadas** y **completadas** en estadísticas; el historial relata las jugadas que se preparan y las que funcionan. El modo «Analizar IA» identifica la intención de correr o devolver.
+- Se conserva el parche 0.4.1 de plantillas y sustituciones y el 0.4.2 de decisiones contextuales.
+
+**Límites conocidos:** las paredes representan una primera coordinación ofensiva explícita, no un modelo táctico profundo de todos los jugadores. La precisión estadística de los partidos necesita continuar calibrándose y los esquemas de plantillas no se sincronizan en tiempo real.

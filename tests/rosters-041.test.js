@@ -10,7 +10,7 @@ const full=id=>[...buildLineup(club(id),0),...buildBench(club(id),0)].map(p=>p.n
 test('33 clubs have no duplicate footballers across all XIs and substitute benches',()=>{
  assert.equal(TEAMS.length,33);
  assert.deepEqual(auditRosterOwnership(),[]);
- assert.equal(RATINGS_REVISION,'0.4.2');
+ assert.equal(RATINGS_REVISION,'0.5.0');
 });
 test('verified 2026/27 moves are not left in previous teams substitute lists',()=>{
  assert.ok(full('psg').includes('Ferran Torres'));

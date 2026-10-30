@@ -1,7 +1,8 @@
-import {buildLineup,buildBench} from './teams.js?v=0.4.2';
-import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.4.2';
-import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.4.2';
-import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.4.2';
+import {buildLineup,buildBench} from './teams.js?v=0.5.0';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.0';
+import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.0';
+import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.0';
+import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -18,6 +19,7 @@ export class MatchEngine{
   this.benches=[buildBench(home,0),buildBench(away,1)];this.rosterHistory=this.teams.map((t,i)=>[...t,...this.benches[i]]);this.subsUsed=[0,0];this.subWindows=[56,68,79];this.subMoment=null;this.subMomentSerial=0;
   this.stats=[STATS(),STATS()];this.events=[];this.goals=[];
   this.ball={x:52.5,y:34,owner:null,flight:null};this.attackPasses=0;
+   this.combo=null;this.comboCooldown=0;this.patterns=[{started:0,completed:0},{started:0,completed:0}];
   this.time=0;this.realTime=0;this.half=1;this.status='preview';this.phase='kickoff';
   this.carrier=null;this.possession=0;this.decision=1;this.restart=null;this.lastPass=null;
   this.toast='';this.toastTTL=0;this.goalFlash=0;this.isSetPiece=false;this.sequence=0;this.offsideMark=null;this.pendingCornerHeader=null;this.pendingPeriod=null;this.periodStart=null;
@@ -51,11 +53,25 @@ export class MatchEngine{
  nearest(side,x,y,filter=()=>true){let best=null,d=1e9;for(const p of this.teams[side])if(!p.red&&filter(p)){const v=hypot(p.x-x,p.y-y);if(v<d){best=p;d=v}}return best}
  keeper(side){return this.teams[side][0]}
  hold(p){if(this.possession!==p.side)this.attackPasses=0;this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.phase='posesion';this.decision=this.random(.40,.88)/this.tactic(p.side).tempo;this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null;
-  this.stallWatch={id:p.id,x:p.x,y:p.y,seconds:0};p.aiLastChoice='Controlar balón';p.aiReason='Evaluar compañeros, rivales y espacios'}
+  this.stallWatch={id:p.id,x:p.x,y:p.y,seconds:0};p.aiLastChoice='Controlar balón';p.aiReason='Evaluar compañeros, rivales y espacios';
+  const c=this.combo;
+  if(c){
+   if(p===c.wall&&c.stage==='wall'){
+    c.stage='return';this.decision=Math.min(this.decision,.17);
+    p.aiIntent='Devolver pared al compañero que rompe';
+   }else if(p===c.runner&&c.stage==='flight'){
+    this.patterns[c.side].completed++;
+    this.add('combinationComplete',c.side,`¡Pared completada! ${c.wall.name} habilita la ruptura de ${p.name}.`,p);
+    this.combo=null;
+   }else if(p!==c.initiator||c.stage!=='wall'){
+    this.combo=null;
+   }
+  }
+ }
  ballFree(){this.ball.owner=null;this.carrier=null}
  kickoff(side){this.lastPass=null;this.restartAt('kickoff',side,{x:52.5,y:34},1.15)}
  restartAt(type,side,spot,wait=1.8){
-  this.ballFree();this.lastPass=null;
+  this.ballFree();this.lastPass=null;this.combo=null;
   this.ball.flight=null;this.ball.x=clamp(spot.x,0,105);this.ball.y=clamp(spot.y,0,68);
   this.restart={type,side,spot:{x:this.ball.x,y:this.ball.y},wait};this.restart.kickerId=this.selectKicker(this.restart)?.id;
   const setKicker=this.kicker(this.restart);if(setKicker){setKicker.x=clamp(spot.x-this.direction(side)*1.2,1,104);setKicker.y=clamp(spot.y,1,67)}
@@ -80,7 +96,7 @@ export class MatchEngine{
   return (this.goalX(attacking)-x)*dir<30 && (this.ball.owner!==null||this.ball.flight!==null);
  }
  finishPeriod(){
-  this.pendingPeriod=null;this.periodStart=null;this.ballFree();this.ball.flight=null;this.restart=null;
+  this.pendingPeriod=null;this.periodStart=null;this.ballFree();this.ball.flight=null;this.restart=null;this.combo=null;
   if(this.half===1){this.status='halftime';this.add('half',-1,'Descanso. Los equipos cambiarán de campo.');}
   else{this.status='finished';this.add('end',-1,'Final del partido.');}
  }
@@ -97,6 +113,7 @@ export class MatchEngine{
   }
   if(this.ball.owner)this.stats[this.ball.owner.side].possSeconds+=dt;
   else if(this.ball.flight)this.stats[this.ball.flight.side].possSeconds+=dt*.8;
+  if(this.combo&&!combinationValid(this,this.combo))this.combo=null;
   this.movePlayers(dt);
   if(this.restart){this.restart.wait-=dt;if(this.restart.wait<=0)this.executeRestart();return}
   if(this.ball.flight){this.updateFlight(dt);return}
@@ -239,11 +256,17 @@ export class MatchEngine{
      target.y+=clamp(pushY,-4.5,4.5);
     }
     if(!this.restart){
-     const plan=roleTarget(this,p,target,{x:bx,y:by},attacking,owner);
-     target={x:plan.x,y:plan.y};p.aiIntent=plan.intent;
-     const support=supportTarget(this,p,owner,target);
-     if(support){target={x:support.x,y:support.y};p.aiIntent=support.intent}
-     if(attacking&&owner&&p!==owner&&p.role==='ST'&&
+     const receiving=this.ball.flight?.type==='pass'&&this.ball.flight.to===p;
+     if(receiving){target={...this.ball.flight.end};p.aiIntent='Desmarcarse para recibir el pase'}
+     else{
+      const plan=roleTarget(this,p,target,{x:bx,y:by},attacking,owner);
+      target={x:plan.x,y:plan.y};p.aiIntent=plan.intent;
+      const support=supportTarget(this,p,owner,target);
+      if(support){target={x:support.x,y:support.y};p.aiIntent=support.intent}
+      const coordinated=combinationTarget(this,p);
+      if(coordinated){target={x:coordinated.x,y:coordinated.y};p.aiIntent=coordinated.intent}
+     }
+     if(attacking&&owner&&p!==owner&&p.role==='ST'&&p!==this.combo?.runner&&
        (this.goalX(side)-owner.x)*dir<27){
       target.x=target.x*.48+clamp(owner.x+dir*10,3,102)*.52;
       target.y=target.y*.48+(owner.y<34?37:31)*.52;
@@ -251,6 +274,14 @@ export class MatchEngine{
      }
     }
     else p.aiIntent='Recolocarse para reanudación';
+    if(!this.restart&&!attacking&&p===pressers[1]&&owner){
+     const cover=coverPassingLane(this,p,owner);
+     if(cover){
+      target.x=target.x*.22+cover.x*.78;
+      target.y=target.y*.22+cover.y*.78;
+      p.aiIntent=cover.intent;
+     }
+    }
     p.fx=clamp(target.x,2,103);p.fy=clamp(target.y,2,66);
     p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
     const pressureStyle=tactic.press;
@@ -407,6 +438,26 @@ export class MatchEngine{
   if(press<2.5&&this.rng()<.12){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
   // A clear carrier may advance before making another choice.
   if((quality.distance>36&&press>5&&this.rng()<.18)||(press>7&&this.rng()<.12)){this.decision=this.random(.38,.70)/this.tactic(side).tempo;return}
+  if(this.combo?.wall===p&&this.combo.stage==='return'){
+   const c=this.combo;
+   if(returnPassViable(this,c)){
+    c.stage='flight';p.aiLastChoice='Pared hacia '+c.runner.name;
+    p.aiReason='Tercer hombre rompe a espacio con corredor despejado';
+    this.pass(p,c.runner,false,c.target);return
+   }
+   this.combo=null;
+  }
+  if(!this.combo&&this.realTime>=this.comboCooldown&&this.rng()<combinationRate(this.tactics[side])){
+   const c=chooseCombination(this,p);
+   if(c){
+    this.combo=c;this.comboCooldown=this.realTime+5.7;
+    this.patterns[side].started++;
+    p.aiLastChoice='Iniciar pared con '+c.wall.name;
+    p.aiReason=c.runner.name+' prepara un desmarque detrás de la primera línea';
+    this.add('combination',side,`${p.name} prepara una pared con ${c.wall.name}; ${c.runner.name} ataca el espacio.`,p);
+    this.pass(p,c.wall);return
+   }
+  }
   const receiver=this.findReceiver(p);
   if(receiver){p.aiLastChoice='Pase a '+receiver.name;p.aiReason='Progresar con línea disponible';this.pass(p,receiver);return}
   const q=safeOutlet(this,p);
@@ -465,7 +516,7 @@ export class MatchEngine{
   if(def.length<2)return false;
   return to.x*dir>Math.max(def[1],from.x*dir)+.4;
  }
- pass(from,to,setPiece=false){
+ pass(from,to,setPiece=false,aim=null){
   if(!from||!to)return;
   const side=from.side;
   this.stats[side].passes++;this.attackPasses++;
@@ -474,7 +525,8 @@ export class MatchEngine{
   // Every normal pass targets a legal reception point; throw-ins are generated by actual clearances.
    // Predict a bounded receiving point, leaving the receiver time to run onto the ball.
   const advance=(to.x-from.x)*this.direction(side);
-  const end={x:clamp(to.x+this.direction(side)*(advance>0?Math.min(3,advance*.13):0),2,103),y:clamp(to.y+this.random(-.6,.6),2,66)};
+  const end=aim?{x:clamp(aim.x,2,103),y:clamp(aim.y,2,66)}:
+    {x:clamp(to.x+this.direction(side)*(advance>0?Math.min(3,advance*.13):0),2,103),y:clamp(to.y+this.random(-.6,.6),2,66)};
   this.ballFree();this.ball.x=start.x;this.ball.y=start.y;
   const d=dist(start,end);
   const defender=this.nearest(1-side,end.x,end.y,p=>p.i>0);
@@ -577,5 +629,5 @@ export class MatchEngine{
  get clock(){const secs=Math.floor(this.time);return `${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`}
  get score(){return `${this.stats[0].goals} - ${this.stats[1].goals}`}
  get possessionPct(){const total=this.stats[0].possSeconds+this.stats[1].possSeconds;return total?Math.round(this.stats[0].possSeconds/total*100):50}
- snapshot(){return {tactics:this.tactics,diagnostics:this.diagnostics,roleCount:this.teams.reduce((n,a)=>n+a.filter(p=>p.aiRole).length,0),status:this.status,time:this.time,half:this.half,score:this.stats.map(s=>s.goals),events:this.events,stats:this.stats,goals:this.goals,subsUsed:this.subsUsed,ball:{x:this.ball.x,y:this.ball.y,owner:this.ball.owner?.id||null,flight:this.ball.flight?.type||null},teams:this.teams};}
+ snapshot(){return {patterns:this.patterns,tactics:this.tactics,diagnostics:this.diagnostics,roleCount:this.teams.reduce((n,a)=>n+a.filter(p=>p.aiRole).length,0),status:this.status,time:this.time,half:this.half,score:this.stats.map(s=>s.goals),events:this.events,stats:this.stats,goals:this.goals,subsUsed:this.subsUsed,ball:{x:this.ball.x,y:this.ball.y,owner:this.ball.owner?.id||null,flight:this.ball.flight?.type||null},teams:this.teams};}
 }
