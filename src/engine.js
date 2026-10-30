@@ -1,7 +1,7 @@
 import {buildLineup,buildBench} from './teams.js?v=0.4.2';
 import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.4.2';
 import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.4.2';
-import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.4.2;
+import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.4.2';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
