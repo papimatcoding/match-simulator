@@ -1,7 +1,8 @@
-import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.3.0';
-import {MatchEngine} from './engine.js?v=0.3.0';
-import {PitchRenderer} from './render.js?v=0.3.0';
-import {TACTICS,defaultTactic} from './tactics.js?v=0.3.0';
+import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.4.0';
+import {MatchEngine} from './engine.js?v=0.4.0';
+import {PitchRenderer} from './render.js?v=0.4.0';
+import {TACTICS,defaultTactic} from './tactics.js?v=0.4.0';
+import {ROLES,eligibleRoles,ROLE_FOCUS} from './roles.js?v=0.4.0';
 const $=q=>document.querySelector(q);
 // The displayed revision proves which ratings dataset the browser has loaded.
 const revisionLabel=document.getElementById('ratings-revision');
@@ -27,18 +28,49 @@ by('swap').onclick=()=>{const a=by('home').value;by('home').value=by('away').val
  by('tactic-home').value=defaultTactic(selected()[0]);by('tactic-away').value=defaultTactic(selected()[1]);syncSelection()};syncSelection();
 for(const [id,side] of [['live-tactic-home',0],['live-tactic-away',1]])by(id).addEventListener('change',()=>{if(game?.status==='live'||game?.status==='halftime'){game.setTactic(side,by(id).value);refresh(true)}});
 
-function lineup(team,side){const players=game.teams[side];return `<div class="lineup-head">${icon(team)}<div><h3>${esc(team.name)}</h3><small>${esc(team.league)} · ${team.formation==='433'?'4-3-3':team.formation==='4231'?'4-2-3-1':'3-5-2'} · ${esc(TACTICS[game.tactics[side]].label)}</small></div><div class="lineup-pos">${team.rating}</div></div>${players.map(p=>`<div class="playerline"><span class="number">${p.number}</span><span>${esc(p.name)}</span><span class="role">${p.role}</span><span class="value">${p.rating}</span></div>`).join('')}`}
+const roleLabel=p=>ROLES[p.aiRole]?.label||p.role;
+const proficiency=p=>p.aiFamiliarity===2?'Rol++':p.aiFamiliarity===1?'Rol+':'Base';
+const roleOptions=p=>eligibleRoles(p.role).map(key=>`<option value="${key}"${p.aiRole===key?' selected':''}>${ROLES[key].label}</option>`).join('');
+function lineup(team,side){const players=game.teams[side];return `<div class="lineup-head">${icon(team)}<div><h3>${esc(team.name)}</h3><small>${esc(team.league)} · ${team.formation==='433'?'4-3-3':team.formation==='4231'?'4-2-3-1':'3-5-2'} · ${esc(TACTICS[game.tactics[side]].label)}</small></div><div class="lineup-pos">${team.rating}</div></div>${players.map(p=>`<div class="playerline"><span class="number">${p.number}</span><span>${esc(p.name)}</span><span class="role">${p.role}</span><span class="value">${p.rating}</span><div class="role-config"><label>ROL <select class="player-role" data-side="${side}" data-index="${p.i}">${roleOptions(p)}</select></label><label>ENFOQUE <select class="player-focus" data-side="${side}" data-index="${p.i}">${ROLE_FOCUS.map(f=>`<option value="${f}"${p.aiFocus===f?' selected':''}>${f}</option>`).join('')}</select></label><small class="role-level">${proficiency(p)}</small></div></div>`).join('')}`}
 function changeScreen(id){for(const name of ['setup','pregame','game'])show(by(name),id===name)}
 function setupMatch(){const [h,a]=selected();if(h.id===a.id)return;
  game=new MatchEngine(h,a,Math.floor(Math.random()*4294967295),{tactics:[by('tactic-home').value,by('tactic-away').value]});changeScreen('pregame');by('lineup-home').innerHTML=lineup(h,0);by('lineup-away').innerHTML=lineup(a,1);window.scrollTo({top:0,behavior:'smooth'})}
+by('pregame').addEventListener('change',e=>{
+ const el=e.target;if(!el.matches('.player-role,.player-focus')||!game)return;
+ const side=Number(el.dataset.side),index=Number(el.dataset.index),p=game.teams[side][index];if(!p)return;
+ game.setPlayerRole(side,index,el.classList.contains('player-role')?el.value:p.aiRole,
+  el.classList.contains('player-focus')?el.value:p.aiFocus);
+ by('lineup-home').innerHTML=lineup(game.clubs[0],0);by('lineup-away').innerHTML=lineup(game.clubs[1],1);
+});
 by('new-match').onclick=setupMatch;by('change').onclick=()=>changeScreen('setup');
 function startMatch(){if(!game)return;changeScreen('game');by('short-home').textContent=game.clubs[0].name;by('short-away').textContent=game.clubs[1].name;by('score-home-meta').textContent=TACTICS[game.tactics[0]].label;by('score-away-meta').textContent=TACTICS[game.tactics[1]].label;
   by('live-tactic-home').value=game.tactics[0];by('live-tactic-away').value=game.tactics[1];
  by('ingame-lineups').innerHTML=game.clubs.map((team,side)=>`<div class="mini-lineup"><header>${esc(team.name)}</header>${game.teams[side].map(p=>`<div><b>${p.number}</b><span>${esc(p.name)}</span></div>`).join('')}</div>`).join('');
- renderer=renderer||new PitchRenderer(by('pitch'));renderer.resize();game.start();speed=1;running=true;lastFrame=0;accum=0;lastEv=0;lastUI=0;document.body.classList.remove('read-mode');by('view').textContent='Solo relato';by('speed').textContent='Velocidad 1×';by('pause').textContent='Ⅱ Pausar';show(by('overlay'),false);refresh(true);window.scrollTo({top:0,behavior:'smooth'});requestAnimationFrame(loop)}
+ renderer=renderer||new PitchRenderer(by('pitch'));renderer.resize();game.start();speed=1;running=true;lastFrame=0;accum=0;lastEv=0;lastUI=0;aiDebug=false;game.debugAI=false;game.selectedPlayer=game.teams[0][9];show(by('ai-inspector'),false);by('debug').textContent='Analizar IA';document.body.classList.remove('read-mode');by('view').textContent='Solo relato';by('speed').textContent='Velocidad 1×';by('pause').textContent='Ⅱ Pausar';show(by('overlay'),false);refresh(true);window.scrollTo({top:0,behavior:'smooth'});requestAnimationFrame(loop)}
 by('start').onclick=startMatch;
 by('pause').onclick=()=>{if(!game||game.status!=='live')return;running=!running;by('pause').textContent=running?'Ⅱ Pausar':'▶ Reanudar'};
 by('speed').onclick=()=>{speed=speed===1?.5:speed===.5?2:speed===2?4:1;by('speed').textContent=`Velocidad ${speed}×`};
+let aiDebug=false;
+by('debug').onclick=()=>{aiDebug=!aiDebug;if(game)game.debugAI=aiDebug;by('debug').textContent=aiDebug?'Desactivar análisis IA':'Analizar IA';show(by('ai-inspector'),aiDebug);refresh(true)};
+by('pitch').addEventListener('click',e=>{
+ if(!aiDebug||!game||!renderer)return;
+ const rect=by('pitch').getBoundingClientRect(),px=e.clientX-rect.left,py=e.clientY-rect.top;
+ let best=null,measure=1e5;
+ for(const team of game.teams)for(const p of team){if(p.red)continue;
+  const [x,y]=renderer.point(p.x,p.y),d=Math.hypot(px-x,py-y);
+  if(d<measure){measure=d;best=p}
+ }
+ if(best&&measure<32){game.selectedPlayer=best;refreshAI()}
+});
+function refreshAI(){
+ if(!game||!aiDebug)return;
+ const p=game.selectedPlayer||game.ball.owner||game.teams[0][9];if(!p)return;
+ by('ai-inspector').innerHTML=`<strong>${esc(p.name)} #${p.number}</strong>
+ <span>${esc(roleLabel(p))} · ${proficiency(p)} · ${esc(p.aiFocus||'equilibrado')}</span>
+ <span>Objetivo: ${esc(p.aiIntent||'Mantener posición')}</span>
+ <span>Última decisión: ${esc(p.aiLastChoice||'—')}</span>
+ <small>${esc(p.aiReason||'En espera de información')}</small>`;
+}
 by('view').onclick=()=>{document.body.classList.toggle('read-mode');by('view').textContent=document.body.classList.contains('read-mode')?'Ver campo':'Solo relato'};
 by('fullscreen').onclick=()=>{const el=document.querySelector('.pitch-wrapper');if(!document.fullscreenElement)el.requestFullscreen?.();else document.exitFullscreen?.()};
 by('rematch').onclick=()=>{running=false;game=null;show(by('overlay'),false);changeScreen('setup')};
@@ -54,7 +86,7 @@ function refresh(force=false){if(!game)return;by('score-home').textContent=game.
  if(game.toastTTL>0){show(by('ticker'),true);by('ticker').textContent=game.toast}else show(by('ticker'),false);
  if(force||game.events.length!==lastEv){const hadSub=game.events.slice(lastEv).some(e=>e.type==='substitution');lastEv=game.events.length;
   if(hadSub)by('ingame-lineups').innerHTML=game.clubs.map((team,side)=>`<div class="mini-lineup"><header>${esc(team.name)} · Cambios ${game.subsUsed[side]}/3</header>${game.teams[side].map(p=>`<div><b>${p.number}</b><span>${esc(p.name)}</span></div>`).join('')}</div>`).join('');const filtered=game.events.filter(e=>e.type!=='pass'&&e.type!=='loose'&&e.type!=='start').slice(-70).reverse();by('feed').innerHTML=filtered.length?filtered.map(e=>`<div class="event ${e.type}"><b>${e.minute}'</b><span class="evtext">${esc(e.description)}</span></div>`).join(''):`<div class="event empty">El encuentro está a punto de comenzar.</div>`;}
- if(tab==='stats')by('stats').innerHTML=statHtml();
+ if(tab==='stats')by('stats').innerHTML=statHtml();if(aiDebug)refreshAI();
  if(game.status==='halftime'){running=false;show(by('overlay'),true);by('overlay-text').innerHTML=`<strong>DESCANSO</strong><p>Ambos equipos van a cambiar de campo. Consulta los datos y reanuda cuando quieras.</p><div class="halftime-score">${game.score}</div>`;by('continue').textContent='Jugar segunda parte →'}
  if(game.status==='finished'){running=false;show(by('overlay'),true);by('overlay-text').innerHTML=`<strong>FINAL DEL PARTIDO</strong><p>${esc(game.clubs[0].name)} contra ${esc(game.clubs[1].name)}. Estadísticas reales de la simulación disponibles en la pestaña correspondiente.</p><div class="halftime-score">${game.score}</div>`;by('continue').textContent='Nueva simulación →'}
 }

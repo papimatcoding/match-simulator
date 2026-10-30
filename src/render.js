@@ -40,6 +40,21 @@ export class PitchRenderer{
    ctx.beginPath();ctx.arc(x,y,radius,0,7);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle=bright?'#ffffff':'#ecf8fa';ctx.lineWidth=1.6;ctx.stroke();
    ctx.font=`800 ${Math.round(radius*.95)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=bright?'#0d2730':'#ffffff';ctx.fillText(String(p.number),x,y+.5);
   }
+  if(engine.debugAI){
+   const selected=engine.selectedPlayer||engine.ball.owner;
+   for(const side of [0,1])for(const p of engine.teams[side]){
+    if(p.red||!p.aiRole||p===selected||Math.hypot(p.fx-p.x,p.fy-p.y)<2)continue;
+    const [ax,ay]=this.point(p.x,p.y),[tx,ty]=this.point(p.fx,p.fy);
+    ctx.save();ctx.globalAlpha=.27;ctx.strokeStyle=side===0?'#8effd0':'#ffd99b';
+    ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(tx,ty);ctx.stroke();ctx.restore();
+   }
+   if(selected){const [x,y]=this.point(selected.x,selected.y),[tx,ty]=this.point(selected.fx,selected.fy);
+    ctx.save();ctx.strokeStyle='#ffed98';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,clamp(S*2.1,14,23),0,7);ctx.stroke();
+    ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(tx,ty);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#ffeab4';ctx.font='bold 11px system-ui';ctx.textAlign='center';
+    ctx.fillText(selected.aiRole?.replaceAll('_',' ').toUpperCase()||selected.role,x,y-20);ctx.restore();
+   }
+  }
   const {ball}=engine;const [bx,by]=this.point(ball.x,ball.y);
   const rad=clamp(S*.56,4.5,7);
   ctx.beginPath();ctx.ellipse(bx+1.4,by+3.5,rad*1.05,rad*.58,0,0,7);ctx.fillStyle='#001e16ba';ctx.fill();

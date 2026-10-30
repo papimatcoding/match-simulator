@@ -1,4 +1,5 @@
-# MatchLab 0.3 · Inteligencia táctica colectiva
+# MatchLab 0.4 · Roles individuales y decisiones sin bloqueos
+
 
 
 Laboratorio independiente del proyecto FUERA DE GUIÓN. Selección de dos equipos y simulación 11 contra 11 en Canvas 2D con 300 segundos de duración real aproximada a velocidad 1×.
@@ -53,7 +54,7 @@ Pendiente superar pruebas repetidas de: cero teletransportes del balón durante 
 
 Referencia de las reglas aplicadas de forma simplificada: [IFAB Ley 7](https://www.theifab.com/laws/latest/the-duration-of-the-match/), [IFAB Ley 11](https://www.theifab.com/laws/latest/offside/), [IFAB Ley 17](https://www.theifab.com/laws/latest/the-corner-kick/).
 
-## Cambios de alfa 0.3.0
+## Cambios de alfa 0.4.0
 
 - **Tiros razonados**: oportunidad estimada por distancia, ángulo, marcadores en la línea y calidad de remate. Disminuyen los tiros lejanos sin sentido; los atacantes consideran compañeros mejor colocados. El desenlace y la trayectoria siguen vinculados.
 - **Pases más intencionales**: más valor a progresar sin regalar el balón, teniendo en cuenta cobertura, presión, longitud y fuera de juego. Se evitan tanto la concatenación de pases exclusivamente hacia atrás como los pelotazos absurdos a una zona tapada.
@@ -66,7 +67,7 @@ Referencia de las reglas aplicadas de forma simplificada: [IFAB Ley 7](https://w
 Referencia: [IFAB Regla 13](https://www.theifab.com/es/laws/latest/free-kicks/) y [Regla 8](https://www.theifab.com/laws/latest/the-start-and-restart-of-play/).
 
 **Limitación:** un modelo espacial simple sigue siendo distinto a un simulador 3D profesional. La elección del disparo y del pase es heurística; la continuidad de los movimientos y de las interrupciones debe seguirse validando visualmente en diversos navegadores.
-## Actualización 0.3.0 · ritmo, definición y LaLiga
+## Actualización 0.4.0 · ritmo, definición y LaLiga
 
 - **33 clubes**, con los 20 clubes reales que disputan LaLiga 2026/27. Los 17 onces adicionales son selecciones ilustrativas de futbolistas vinculados a sus plantillas; los dorsales de prueba y las valoraciones individuales estimadas no son fichas oficiales de EA.
 - La toma de decisiones es más rápida, con velocidades de ejecución de pases y remates ajustadas. A velocidad 1×, un partido sigue durando aproximadamente cinco minutos.
@@ -82,3 +83,15 @@ Referencia: [IFAB Regla 13](https://www.theifab.com/es/laws/latest/free-kicks/) 
 Cada equipo parte de la filosofía de su club (posesión/tiki-taka, ofensiva/vertical, bloque bajo/defensiva o presión). La táctica se puede elegir por separado para local y visitante **antes del partido y durante el encuentro**. Las cinco opciones: ofensiva, equilibrada, defensiva, presión alta y tiki-taka. No son solo etiquetas: influyen en la anchura, profundidad, cantidad de futbolistas que presionan, carrera de los atacantes, ritmo de decisiones y valoración de líneas de pase. Desde el minuto 72, ir perdiendo aumenta la urgencia y, desde el 78, ir ganando favorece proteger la ventaja.
 
 Cambios de inteligencia sin balón: llegadas de centrocampistas desde segunda línea, diagonales del extremo del lado débil, un central marcando al delantero con cobertura zonal del resto y variación de receptores en saques de esquina. El cabezazo tiene valoración de precisión diferente al remate con el pie, y se evalúa la calidad de la ocasión. Se conserva la misma pelota física para resolver tiros, goles, pérdidas, córners y remates. Datos y resultados del laboratorio no constituyen estadísticas oficiales de EA.
+
+## Inteligencia 0.4
+
+Nuevo módulo `src/roles.js`: 16 roles funcionales con enfoque ofensivo, equilibrado y defensivo. Familiaridad Base, Rol+ o Rol++ estimada por encaje, media y atributos del futbolista; no son datos propietarios ni oficiales de EA FC. Configurables por jugador en la pantalla de alineaciones.
+
+Funciones: falso nueve entre líneas, delantero avanzado que rompe, lateral invertido dentro, lateral ofensivo desdoblando, todoterreno llegando al área, pivote de cobertura, extremos que atacan intervalos, centrales que anticipan o cubren. Son órdenes espaciales condicionadas por la fase y el contexto, no bonificaciones nominales.
+
+Corrección de estancamientos: el poseedor elige alternativa segura cuando no encuentra pase de progresión; si no avanza durante 1,6 s, intenta reciclar con un compañero o conducir hacia una zona despejada. Se muestra un modo de análisis IA: seleccionar al futbolista en el campo revela rol, intención, decisión y motivo y dibuja objetivos posicionales.
+
+Córners y cabezazos utilizan perfiles de posición y habilidad aérea estimada. Se mantienen el motor físico de trayectorias, estadísticas derivadas y modos tácticos 0.3. Las pruebas automáticas controlan continuidad, decisiones y diferencias de roles.
+
+Se trata de heurísticas individuales y colectivas experimentales, no un simulador de aprendizaje automático ni una representación completa de todos los reglamentos.
