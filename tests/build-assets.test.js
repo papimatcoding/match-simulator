@@ -4,12 +4,12 @@ import {readFileSync} from 'node:fs';
 import {TEAMS,buildLineup,RATINGS_REVISION} from '../src/teams.js';
 const file = path => readFileSync(new URL(path,import.meta.url),'utf8');
 test('published module graph busts cached ratings from prior builds', () => {
- const version = '0.4.1';
+ const version = '0.4.2';
  assert.equal(RATINGS_REVISION,version);
- assert.match(file('../index.html'), /src\/app\.js\?v=0\.4\.1/);
- assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.4\.1/);
- assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.4\.1/);
- assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.4\.1/);
+ assert.match(file('../index.html'), /src\/app\.js\?v=0\.4\.2/);
+ assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.4\.2/);
+ assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.4\.2/);
+ assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.4\.2/);
  assert.match(file('../index.html'), /id="ratings-revision"/);
 });
 test('lineup screen data uses footballer-specific values, not team OVR or shirt',()=>{
@@ -35,10 +35,10 @@ test('LaLiga completa y escalones de calidad para pruebas',()=>{
 });
 
 test('tactical presets are imported as a versioned module',()=>{
- assert.ok(file('../src/app.js').includes('tactics.js?v=0.4.1'));
- assert.ok(file('../src/engine.js').includes('tactics.js?v=0.4.1'));
- assert.ok(file('../src/engine.js').includes('roles.js?v=0.4.1'));
- assert.ok(file('../src/app.js').includes('roles.js?v=0.4.1'));
+ assert.ok(file('../src/app.js').includes('tactics.js?v=0.4.2'));
+ assert.ok(file('../src/engine.js').includes('tactics.js?v=0.4.2'));
+ assert.ok(file('../src/engine.js').includes('roles.js?v=0.4.2'));
+ assert.ok(file('../src/app.js').includes('roles.js?v=0.4.2'));
  assert.match(file('../index.html'),/id="tactic-home"/);
  assert.match(file('../index.html'),/id="live-tactic-home"/);
  assert.match(file('../index.html'),/id="ai-inspector"/);
@@ -47,6 +47,11 @@ test('tactical presets are imported as a versioned module',()=>{
 test('substitution break has a visible card and its own versioned asset graph',()=>{
  assert.match(file('../index.html'),/id="sub-moment"/);
  assert.ok(file('../src/app.js').includes('subHold=2.85'));
- assert.ok(file('../src/app.js').includes('0.4.1'));
- assert.ok(file('../src/engine.js').includes('0.4.1'));
+ assert.ok(file('../src/app.js').includes('0.4.2'));
+ assert.ok(file('../src/engine.js').includes('0.4.2'));
+});
+
+test('situational intelligence is loaded from versioned decision module',()=>{
+ assert.ok(file('../src/engine.js').includes('decisions.js?v=0.4.2'));
+ assert.ok(file('../index.html').includes('src/app.js?v=0.4.2'));
 });

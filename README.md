@@ -1,4 +1,4 @@
-# MatchLab 0.4.1 — Plantillas contrastadas y cambios visuales
+# MatchLab 0.4.2 · Criterio de tiro, salidas seguras y desmarques
 
 
 
@@ -107,3 +107,14 @@ Se trata de heurísticas individuales y colectivas experimentales, no un simulad
 Fuentes de plantillas: [Barça 2026/27](https://www.fcbarcelona.com/en/football/first-team/news/4570894/202627-first-team-jersey-numbers-confirmed), [PSG 2026/27](https://www.psg.fr/en/mens-football/squad/season/2026-2027), [Liverpool 2026/27](https://www.liverpoolfc.com/news/liverpool-submit-premier-league-squad-list-2026-27), [Chelsea](https://www.chelseafc.com/en/teams/mens-profiles), [BVB](https://www.bvb.de/de/en/teams/football/first-team.html), [Elche](https://www.elchecf.es/noticias/el-elche-cf-presenta-a-sus-cuatro-ultimas-incorporaciones).
 
 Quedan por verificar exhaustivamente los nombres y dorsales de los 33 onces y banquillos; las plantillas son recortes manuales, no sincronización en directo con una API deportiva.
+
+## 0.4.2 — Lectura de las ocasiones y líneas de pase
+
+- Un atacante en una ocasión frontal clara, a menos de 14 m, sin defensores entre él y la portería, **remata en vez de buscar un pase atrás**. La precisión de remate en el mano a mano también tiene un tratamiento específico.
+- Los defensores y el portero no toman decisiones de disparo desde campo propio; los jugadores defensivos no fuerzan tiros lejanos poco realistas.
+- Los jugadores atascados analizan el corredor de pase: si no hay vía segura, pueden conducir buscando espacio o despejar desde la zona defensiva. El motor evita reciclar repetidamente pases obstruidos.
+- Centro del campo y extremos generan apoyos diferenciados a izquierda y derecha del portador; el delantero busca la zona de remate cuando el balón se acerca al área.
+- Las estadísticas salen de la misma pelota y los mismos eventos. La versión no incorpora física 3D ni aprendizaje automático.
+- Se conservan las plantillas revisadas y la detención visual de los cambios introducidas en 0.4.1.
+
+Las reglas de decisión de MatchLab son aproximaciones futbolísticas propias, no los algoritmos de EA Sports FC.

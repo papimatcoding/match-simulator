@@ -1,6 +1,7 @@
-import {buildLineup,buildBench} from './teams.js?v=0.4.1';
-import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.4.1';
-import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.4.1';
+import {buildLineup,buildBench} from './teams.js?v=0.4.2';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.4.2';
+import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.4.2';
+import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.4.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -23,6 +24,8 @@ export class MatchEngine{
   this.reposition(0,true);
  }
  random(a,b){return a+(b-a)*this.rng()}
+ isClearChance(p,q){return isClearChance(this,p,q)}
+ passingLane(from,to){return passingLane(this,from,to)}
  setPlayerRole(side,index,key,focus='equilibrado'){const p=this.teams[side]?.[index];if(!p||!eligibleRoles(p.role).includes(key))return false;assignRole(p,key,focus);return true}
  diagnose(reason,player=null){this.diagnostics.push({time:Math.round(this.time/60*10)/10,reason,player:player?.name||null});if(this.diagnostics.length>90)this.diagnostics.shift()}
   tactic(side){return tacticalState(this.tactics[side],this.time/60,this.stats[side].goals-this.stats[1-side].goals)}
@@ -102,9 +105,15 @@ export class MatchEngine{
    if(w.id!==p.id)this.stallWatch={id:p.id,x:p.x,y:p.y,seconds:0};
    else if(hypot(p.x-w.x,p.y-w.y)>.85){w.x=p.x;w.y=p.y;w.seconds=0}
    else if((w.seconds+=dt)>1.6){
-    const q=safeOutlet(this,p);this.diagnose('Sin avance: reciclar posesión',p);p.aiReason='Sin avance durante 1,6 s';p.aiLastChoice='Liberar posesión';w.seconds=0;
-    if(q&&dist(p,q)>.6){this.pass(p,q);return}
-    p.aiEscape=escapeDirection(this,p);this.decision=Math.min(this.decision,.15)
+    const q=safeOutlet(this,p),op=this.nearest(1-p.side,p.x,p.y,z=>z.i>0);
+    this.diagnose('Sin avance: salida de emergencia',p);
+    p.aiReason='Sin avance: comprobar tiro, pase, despeje y conducción';
+    p.aiLastChoice='Liberar posesión';w.seconds=0;
+    if(this.isClearChance(p)){this.shoot(p);return}
+    if(q&&dist(p,q)>.6&&this.passingLane(p,q)>2.4){this.pass(p,q);return}
+    const ownDistance=(p.x-this.ownGoalX(p.side))*this.direction(p.side);
+    if(ownDistance<27&&op&&dist(op,p)<4){this.clearance(p,1-p.side);return}
+    p.aiEscape=escapeDirection(this,p);this.decision=Math.min(this.decision,.15);
    }
    this.decision-=dt;if(this.decision<=0)this.decide(p);return}
   const near0=this.nearest(0,this.ball.x,this.ball.y),near1=this.nearest(1,this.ball.x,this.ball.y);
@@ -229,7 +238,18 @@ export class MatchEngine{
      target.x+=clamp(pushX,-4.5,4.5);
      target.y+=clamp(pushY,-4.5,4.5);
     }
-    if(!this.restart){const plan=roleTarget(this,p,target,{x:bx,y:by},attacking,owner);target={x:plan.x,y:plan.y};p.aiIntent=plan.intent}
+    if(!this.restart){
+     const plan=roleTarget(this,p,target,{x:bx,y:by},attacking,owner);
+     target={x:plan.x,y:plan.y};p.aiIntent=plan.intent;
+     const support=supportTarget(this,p,owner,target);
+     if(support){target={x:support.x,y:support.y};p.aiIntent=support.intent}
+     if(attacking&&owner&&p!==owner&&p.role==='ST'&&
+       (this.goalX(side)-owner.x)*dir<27){
+      target.x=target.x*.48+clamp(owner.x+dir*10,3,102)*.52;
+      target.y=target.y*.48+(owner.y<34?37:31)*.52;
+      p.aiIntent='Romper hacia zona de remate';
+     }
+    }
     else p.aiIntent='Recolocarse para reanudación';
     p.fx=clamp(target.x,2,103);p.fy=clamp(target.y,2,66);
     p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
@@ -357,7 +377,10 @@ export class MatchEngine{
  }
  shouldShoot(p,quality=this.shotQuality(p)){
   const {distance,angleFactor,blockers,xg}=quality;
+  if(p.i===0||(p.x-52.5)*this.direction(p.side)<=0)return false;
+  if(['CB','LB','RB','LWB','RWB','DM'].includes(p.role)&&distance>22)return false;
   if(distance>32||angleFactor<.14)return false;
+  if(this.isClearChance(p,quality))return true;
   const forward=this.direction(p.side);
   const betterTeammate=this.teams[p.side].some(q=>q!==p&&q.i>0&&!q.red&&
    (q.x-p.x)*forward>3&&hypot(this.goalX(p.side)-q.x,q.y-34)<distance-4&&
@@ -376,6 +399,9 @@ export class MatchEngine{
   if(this.pendingCornerHeader===p.id){this.pendingCornerHeader=null;this.add('header',side,`${p.name} se eleva para cabecear el córner.`,p);this.shoot(p,false,false,true);return}
   const quality=this.shotQuality(p);
   const nearest=this.nearest(1-side,p.x,p.y,q=>q.i!==0),press=nearest?dist(p,nearest):25;
+  if(this.isClearChance(p,quality)){
+   p.aiLastChoice='Finalizar mano a mano';p.aiReason='Tiro claro y sin defensas en trayectoria';this.shoot(p);return
+  }
   if(this.shouldShoot(p,quality)){p.aiLastChoice='Disparar';p.aiReason=`Ocasión xG ${quality.xg.toFixed(2)}, distancia ${quality.distance.toFixed(1)} m`;this.shoot(p);return}
   if(press<3&&this.rng()<.065){this.foul(p,nearest);return}
   if(press<2.5&&this.rng()<.12){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
@@ -384,7 +410,14 @@ export class MatchEngine{
   const receiver=this.findReceiver(p);
   if(receiver){p.aiLastChoice='Pase a '+receiver.name;p.aiReason='Progresar con línea disponible';this.pass(p,receiver);return}
   const q=safeOutlet(this,p);
-  if(q&&dist(q,p)>.7){p.aiLastChoice='Reciclar con '+q.name;p.aiReason='No hay pase de progresión; conservar y cambiar dirección';this.pass(p,q);return}
+  if(q&&dist(q,p)>.7&&this.passingLane(p,q)>2.3){
+   p.aiLastChoice='Reciclar con '+q.name;p.aiReason='No hay pase vertical: cambiar la orientación';this.pass(p,q);return
+  }
+  const ownDistance=(p.x-this.ownGoalX(side))*this.direction(side);
+  if(ownDistance<26&&press<5){p.aiLastChoice='Despejar';p.aiReason='Evitar pérdida cerca de nuestra portería';this.clearance(p,1-side);return}
+  if(quality.distance<16&&quality.angleFactor>.33&&quality.xg>.065&&p.i>0){
+   p.aiLastChoice='Rematar bajo presión';p.aiReason='Sin pase seguro cerca de portería';this.shoot(p);return
+  }
   p.aiEscape=escapeDirection(this,p);p.aiLastChoice='Conducir a espacio';p.aiReason='Sin pase ni tiro viable';this.diagnose('Sin línea de pase: escape',p);
   this.decision=.28/this.tactic(side).tempo;
  }
@@ -465,7 +498,8 @@ export class MatchEngine{
   const xg=penalty?.76:freeKick?clamp(quality.xg*.66,.018,.18):header?clamp(quality.xg*(.80+aerial/80)+(d<17?.05:0),.016,.34):clamp(quality.xg*keeperMod,.004,.65);
   this.stats[side].shots++;this.stats[side].xg+=xg;
   const onTarget=this.rng()<(penalty?.91:header?clamp(.56+aerial*.008-quality.blockers*.028,.38,.82):
-     clamp(.77-(d>24?.13:0)-quality.blockers*.045+(from.skills.shot-83)*.005,.38,.92));
+    this.isClearChance(from,quality)?clamp(.84+(from.skills.shot-75)*.004,.78,.95):
+    clamp(.77-(d>24?.13:0)-quality.blockers*.045+(from.skills.shot-83)*.005,.38,.92));
   const goalChance=onTarget&&(this.rng()<clamp(xg/Math.max(.2,penalty?.91:1.04),0,.94));
   const targetY=onTarget?this.random(31.2,36.8):(this.rng()<.5?this.random(25,29.3):this.random(38.7,43));
   const assist=!penalty&&!freeKick&&this.lastPass?.side===side&&this.lastPass?.to===from.id&&this.time-this.lastPass.time<150?this.lastPass.from:null;
