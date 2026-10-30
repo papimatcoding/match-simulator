@@ -1,6 +1,6 @@
-import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.2.3';
-import {MatchEngine} from './engine.js?v=0.2.3';
-import {PitchRenderer} from './render.js?v=0.2.3';
+import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.2.4';
+import {MatchEngine} from './engine.js?v=0.2.4';
+import {PitchRenderer} from './render.js?v=0.2.4';
 const $=q=>document.querySelector(q);
 // The displayed revision proves which ratings dataset the browser has loaded.
 const revisionLabel=document.getElementById('ratings-revision');

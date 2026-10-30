@@ -1,4 +1,4 @@
-# MatchLab · alfa 0.2.3 (decisiones y posicionamiento)
+# MatchLab · alfa 0.2.4 (decisiones y posicionamiento)
 
 Laboratorio independiente del proyecto FUERA DE GUIÓN. Selección de dos equipos y simulación 11 contra 11 en Canvas 2D con 300 segundos de duración real aproximada a velocidad 1×.
 
@@ -8,7 +8,7 @@ No requiere instalar nada: abre GitHub Pages. Para desarrollo local, sirve la ca
 
 ## Arquitectura
 
-- `src/teams.js`: plantillas y ratings *estimados*, con 16 equipos de las cinco grandes ligas.
+- `src/teams.js`: plantillas y ratings *estimados*, con 33 equipos de las cinco grandes ligas (los 20 clubes de LaLiga 2026/27).
 - `src/engine.js`: motor determinista con semilla, 22 agentes, balón en posesión/vuelo, pase espacial, desmarques, presión, tiros con desenlace espacial, fueras de juego con línea visible, faltas directas, tarjetas, córners, penaltis, saques de banda, cambios reales y tiempo añadido simplificado. El reloj simulado avanza 18 segundos por cada segundo de representación.
 - `src/render.js`: campo y jugadores en Canvas de escala uniforme; traza línea temporal del fuera de juego y distingue desplazamiento de disparos parados.
 - `src/app.js`: selección de equipos, alineaciones, velocidades 0.5×/1×/2×/4×, pausa, descanso, marcador, acta y estadísticas.
@@ -52,7 +52,7 @@ Pendiente superar pruebas repetidas de: cero teletransportes del balón durante 
 
 Referencia de las reglas aplicadas de forma simplificada: [IFAB Ley 7](https://www.theifab.com/laws/latest/the-duration-of-the-match/), [IFAB Ley 11](https://www.theifab.com/laws/latest/offside/), [IFAB Ley 17](https://www.theifab.com/laws/latest/the-corner-kick/).
 
-## Cambios de alfa 0.2.3
+## Cambios de alfa 0.2.4
 
 - **Tiros razonados**: oportunidad estimada por distancia, ángulo, marcadores en la línea y calidad de remate. Disminuyen los tiros lejanos sin sentido; los atacantes consideran compañeros mejor colocados. El desenlace y la trayectoria siguen vinculados.
 - **Pases más intencionales**: más valor a progresar sin regalar el balón, teniendo en cuenta cobertura, presión, longitud y fuera de juego. Se evitan tanto la concatenación de pases exclusivamente hacia atrás como los pelotazos absurdos a una zona tapada.
@@ -65,3 +65,13 @@ Referencia de las reglas aplicadas de forma simplificada: [IFAB Ley 7](https://w
 Referencia: [IFAB Regla 13](https://www.theifab.com/es/laws/latest/free-kicks/) y [Regla 8](https://www.theifab.com/laws/latest/the-start-and-restart-of-play/).
 
 **Limitación:** un modelo espacial simple sigue siendo distinto a un simulador 3D profesional. La elección del disparo y del pase es heurística; la continuidad de los movimientos y de las interrupciones debe seguirse validando visualmente en diversos navegadores.
+## Actualización 0.2.4 · ritmo, definición y LaLiga
+
+- **33 clubes**, con los 20 clubes reales que disputan LaLiga 2026/27. Los 17 onces adicionales son selecciones ilustrativas de futbolistas vinculados a sus plantillas; los dorsales de prueba y las valoraciones individuales estimadas no son fichas oficiales de EA.
+- La toma de decisiones es más rápida, con velocidades de ejecución de pases y remates ajustadas. A velocidad 1×, un partido sigue durando aproximadamente cinco minutos.
+- Se elimina la pérdida de balón aleatoria que mandaba demasiados pases correctos a la banda. Los errores de pase se relacionan con habilidad, distancia y presión y pueden derivar en una intercepción visible.
+- Los delanteros rematan con más decisión cuando tienen una ocasión clara; los tiros lejanos o tapados se desincentivan.
+- Los córners pueden originarse en despejes y desvíos de disparos; sus probabilidades se recalibraron para mantener resultados creíbles.
+- El motor se ha comparado en partidos repetidos entre clubes fuertes y modestos para comprobar que los atributos influyan. Los resultados individuales siguen siendo aleatorios.
+
+**Fuentes de referencia:** [LaLiga - clubes 2026/27](https://www.laliga.com/en-GB/laliga-easports/clubs), [Flashscore - plantillas 26/27](https://www.flashscore.es/noticias/futbol-laliga-plantillas-20-equipos-temporada-26-27/2qiJDXlB/), [FC 27 clubes y valoraciones](https://fafifa.com/league/la-liga). Las alineaciones, dorsales e índices numéricos de esta alfa son configuraciones de simulación, no actas ni datos oficiales en tiempo real.

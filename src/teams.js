@@ -2,7 +2,7 @@
 // Players encoded as "number|name". Positions come from the declared 4-3-3 / 4-2-3-1 / 3-5-2 template.
 const R = (str) => str.split(';').map(item => {const [number,name] = item.trim().split('|');return {number:Number(number),name};});
 const T=(id,name,league,rating,style,color,formation,raw,source)=>({id,name,league,rating,style,color,formation,players:R(raw),source,ratings:{attack:Math.min(94,rating+(style==='vertical'?2:1)),midfield:Math.min(94,rating+(style==='posesion'?2:0)),defense:Math.min(94,rating+(style==='bloque'?2:0))}});
-export const RATINGS_REVISION='0.2.3';
+export const RATINGS_REVISION='0.2.4';
 export const LEAGUES = ['Premier League','LaLiga','Bundesliga','Serie A','Ligue 1'];
 export const TEAMS = [
 T('arsenal','Arsenal','Premier League',88,'posesion','#ec364b','433','1|David Raya;12|Jurrien Timber;2|William Saliba;6|Gabriel Magalhaes;5|Piero Hincapie;36|Martin Zubimendi;41|Declan Rice;8|Martin Odegaard;7|Bukayo Saka;14|Viktor Gyokeres;10|Eberechi Eze','https://www.premierleague.com/en/news/4725682'),
@@ -20,7 +20,24 @@ T('milan','AC Milan','Serie A',84,'posesion','#db4d53','433','16|Mike Maignan;23
 T('juve','Juventus','Serie A',84,'bloque','#dfe6e4','433','25|Guglielmo Vicario;15|Pierre Kalulu;3|Gleison Bremer;4|Federico Gatti;20|Andrea Cambiaso;5|Manuel Locatelli;19|Khephren Thuram;8|Teun Koopmeiners;7|Francisco Conceicao;9|Randal Kolo Muani;10|Kenan Yildiz','https://www.juventus.com/en/teams/first-team-men/squad/'),
 T('psg','Paris Saint-Germain','Ligue 1',89,'posesion','#4c73d8','433','30|Lucas Chevalier;2|Achraf Hakimi;5|Marquinhos;51|Willian Pacho;25|Nuno Mendes;87|Joao Neves;17|Vitinha;8|Fabian Ruiz;10|Ousmane Dembele;9|Ferran Torres;7|Khvicha Kvaratskhelia','https://www.psg.fr/en/mens-football/squad'),
 T('monaco','AS Monaco','Ligue 1',82,'vertical','#d95264','4231','1|Lukas Hradecky;2|Vanderson;15|Eric Dier;22|Mohammed Salisu;20|Flavio Nazinho;6|Denis Zakaria;8|Lamine Camara;18|Takumi Minamino;10|Aleksandr Golovin;11|Matthis Abline;9|Folarin Balogun','https://www.asmonaco.com/en/pros/players'),
-T('marseille','Olympique de Marsella','Ligue 1',81,'presion','#62b6d7','433','1|Jeffrey de Lange;22|Timothy Weah;4|Conrad Egan-Riley;21|Nayef Aguerd;33|Emerson Palmieri;23|Pierre-Emile Hojbjerg;19|Geoffrey Kondogbia;7|Angel Gomes;14|Igor Paixao;9|Amine Gouiri;11|Neal Maupay','https://www.om.fr/en/team/men')
+T('marseille','Olympique de Marsella','Ligue 1',81,'presion','#62b6d7','433','1|Jeffrey de Lange;22|Timothy Weah;4|Conrad Egan-Riley;21|Nayef Aguerd;33|Emerson Palmieri;23|Pierre-Emile Hojbjerg;19|Geoffrey Kondogbia;7|Angel Gomes;14|Igor Paixao;9|Amine Gouiri;11|Neal Maupay','https://www.om.fr/en/team/men'),
+T('athletic','Athletic Club','LaLiga',80,'presion','#dc354a','433','1|Unai Simon;2|Jesus Areso;3|Dani Vivian;4|Aymeric Laporte;5|Yuri Berchiche;6|Mikel Jauregizar;7|Inigo Ruiz de Galarreta;8|Oihan Sancet;9|Inaki Williams;10|Gorka Guruzeta;11|Nico Williams','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('betis','Real Betis','LaLiga',79,'posesion','#32a46c','433','1|Alvaro Valles;2|Hector Bellerin;3|Marc Bartra;4|Natan;5|Junior Firpo;6|Marc Roca;7|Pablo Fornals;8|Isco;9|Antony;10|Cucho Hernandez;11|Abde Ezzalzouli','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('villarreal','Villarreal CF','LaLiga',79,'vertical','#f1c843','433','1|Luiz Junior;2|Santiago Mourino;3|Juan Foyth;4|Renato Veiga;5|Sergi Cardona;6|Pape Gueye;7|Santi Comesana;8|Alberto Moleiro;9|Nicolas Pepe;10|Georges Mikautadze;11|Gerard Moreno','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('sociedad','Real Sociedad','LaLiga',78,'posesion','#5084d1','433','1|Alex Remiro;2|Jon Aramburu;3|Igor Zubeldia;4|Jon Martin;5|Sergio Gomez;6|Jon Gorrotxategi;7|Yangel Herrera;8|Carlos Soler;9|Take Kubo;10|Mikel Oyarzabal;11|Ander Barrenetxea','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('celta','RC Celta','LaLiga',77,'posesion','#64b6e3','433','1|Andrei Radu;2|Sergio Carreira;3|Carl Starfelt;4|Javi Rodriguez;5|Marcos Alonso;6|Ilaix Moriba;7|Miguel Roman;8|Hugo Alvarez;9|Williot Swedberg;10|Borja Iglesias;11|Iago Aspas','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('osasuna','CA Osasuna','LaLiga',77,'bloque','#be3448','433','1|Sergio Herrera;2|Valentin Rosier;3|Alejandro Catena;4|Flavien Boyomo;5|Abel Bretones;6|Lucas Torro;7|Jon Moncayola;8|Aimar Oroz;9|Raul Moro;10|Ante Budimir;11|Ruben Garcia','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('rayo','Rayo Vallecano','LaLiga',77,'presion','#e84e54','433','1|Augusto Batalla;2|Andrei Ratiu;3|Florian Lejeune;4|Luiz Felipe;5|Pep Chavarria;6|Pathe Ciss;7|Pedro Diaz;8|Unai Lopez;9|Isi Palazon;10|Jorge de Frutos;11|Alvaro Garcia','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('valencia','Valencia CF','LaLiga',77,'vertical','#e69e4e','433','1|Stole Dimitrievski;2|Dimitri Foulquier;3|Cesar Tarrega;4|Mouctar Diakhaby;5|Jose Gaya;6|Pepelu;7|Guido Rodriguez;8|Javi Guerra;9|Diego Lopez;10|Hugo Duro;11|Arnaut Danjuma','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('espanyol','RCD Espanyol','LaLiga',76,'bloque','#4382c6','433','1|Marko Dmitrovic;2|Omar El Hilali;3|Leandro Cabrera;4|Unai Nunez;5|Carlos Romero;6|Urko Gonzalez;7|Pol Lozano;8|Edu Exposito;9|Tyrhys Dolan;10|Roberto Fernandez;11|Javi Puado','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('sevilla','Sevilla FC','LaLiga',76,'vertical','#d84652','433','1|Odysseas Vlachodimos;2|Jose Angel Carmona;3|Marcao;4|Kike Salas;5|Gabriel Suazo;6|Lucien Agoume;7|Peque Fernandez;8|Jon Guridi;9|Chidera Ejuke;10|Isaac Romero;11|Ruben Vargas','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('deportivo','RC Deportivo','LaLiga',75,'vertical','#457cbb','433','1|Leo Roman;2|Adria Altimira;3|Dani Barcia;4|Miguel Loureiro;5|Angelino;6|Diego Villares;7|Riki Rodriguez;8|Mario Soriano;9|David Mella;10|Pierre-Emerick Aubameyang;11|Yeremay Hernandez','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('getafe','Getafe CF','LaLiga',75,'bloque','#4d7bb8','433','1|David Soria;2|Kiko Femenia;3|Djene Dakonam;4|Juan Berrocal;5|Zaid Romero;6|Mario Martin;7|Ramon Terrats;8|Javi Munoz;9|Juanmi;10|Borja Mayoral;11|Christantus Uche','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('alaves','Deportivo Alaves','LaLiga',75,'bloque','#3b82bb','433','1|Antonio Sivera;2|Jonny Otto;3|Nahuel Tenaglia;4|Facundo Garces;5|Yusi;6|Antonio Blanco;7|Ander Guevara;8|Denis Suarez;9|Miguel Rodriguez;10|Lucas Boye;11|Toni Martinez','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('levante','Levante UD','LaLiga',74,'vertical','#af4854','433','1|Pablo Cunat;2|Jeremy Toljan;3|Adrian Dela;4|Alberto Cabello;5|Manu Sanchez;6|Oriol Rey;7|Jon Olasagasti;8|Carlos Alvarez;9|Roger Brugue;10|Etta Eyong;11|Ivan Romero','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('elche','Elche CF','LaLiga',73,'bloque','#dce2dd','433','1|Matias Dituro;2|Buba Sangare;3|David Affengruber;4|Pedro Bigas;5|Victor Chust;6|Gonzalo Villar;7|Martim Neto;8|Marc Aguado;9|German Valera;10|Fer Nino;11|Josan Ferrandez','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('racing','Racing Santander','LaLiga',73,'presion','#489663','433','1|Hampus Eriksson;2|Clement Michelin;3|Alvaro Mantilla;4|Pablo Ramon;5|Mario Garcia;6|Sergio Canales;7|Gustavo Puerta;8|Inigo Sainz-Maza;9|Andres Martin;10|Juan Carlos Arana;11|Inigo Vicente','https://www.laliga.com/en-GB/laliga-easports/clubs'),
+T('malaga','Malaga CF','LaLiga',72,'vertical','#56a8d5','433','1|Alfonso Herrero;2|Carlos Puga;3|Andres Murillo;4|Alex Pastor;5|Dani Sanchez;6|Izan Merino;7|Carlos Dotor;8|Dani Lorenzo;9|David Larrubia;10|Chupe;11|Haitam Abaida','https://www.laliga.com/en-GB/laliga-easports/clubs')
 ];
 export const SLOTS={
  '433':[['GK',5,34],['RB',21,57],['CB',18,42],['CB',18,26],['LB',21,11],['DM',39,34],['CM',51,46],['CM',51,22],['RW',73,57],['ST',78,34],['LW',73,11]],
@@ -46,7 +63,24 @@ const STARTING_OVR={
  juve:[85,81,85,79,82,84,81,81,81,81,85],
  psg:[83,85,84,86,89,85,90,84,90,82,89],
  monaco:[81,80,80,79,75,82,80,80,83,77,82],
- marseille:[77,79,77,82,79,83,79,79,82,82,77]
+ marseille:[77,79,77,82,79,83,79,79,82,82,77],
+ athletic:[85,79,80,80,79,80,80,82,81,81,83],
+ betis:[80,78,79,79,78,79,79,83,81,80,80],
+ villarreal:[80,78,79,79,78,79,79,82,80,80,80],
+ sociedad:[84,77,78,78,77,78,78,79,79,84,79],
+ celta:[78,76,77,77,76,77,77,78,78,78,81],
+ osasuna:[78,76,77,77,76,77,77,78,78,82,78],
+ rayo:[78,76,77,77,76,77,77,78,78,81,78],
+ valencia:[78,76,77,77,76,77,77,78,78,78,78],
+ espanyol:[77,75,76,76,75,76,76,77,77,77,77],
+ sevilla:[77,75,76,76,75,76,76,77,77,77,77],
+ deportivo:[76,74,75,75,74,75,75,76,76,76,80],
+ getafe:[80,74,75,75,74,75,75,76,76,76,76],
+ alaves:[76,74,75,75,74,75,75,76,76,76,76],
+ levante:[75,73,74,74,73,74,74,75,75,75,75],
+ elche:[74,72,73,73,72,73,73,74,74,74,74],
+ racing:[74,72,73,73,72,78,73,74,74,74,74],
+ malaga:[76,71,72,72,71,72,72,73,73,73,73]
 };
 const BENCH_OVR={
  arsenal:[80,79,82,83,81], liverpool:[84,80,80,81,79],
@@ -56,7 +90,24 @@ const BENCH_OVR={
  dortmund:[78,79,79,80,79], leverkusen:[77,80,79,77,79],
  inter:[74,78,80,81,78], milan:[77,78,79,84,79],
  juve:[79,78,78,80,81], psg:[79,83,79,82,83],
- monaco:[79,78,77,80,78], marseille:[79,79,77,80,78]
+ monaco:[79,78,77,80,78], marseille:[79,79,77,80,78],
+ athletic:[77,77,78,77],
+ betis:[76,76,77,76],
+ villarreal:[76,76,77,76],
+ sociedad:[75,75,76,75],
+ celta:[74,74,75,74],
+ osasuna:[74,74,75,74],
+ rayo:[74,74,75,74],
+ valencia:[74,74,75,74],
+ espanyol:[73,73,74,73],
+ sevilla:[73,73,74,73],
+ deportivo:[72,72,73,72],
+ getafe:[72,72,73,72],
+ alaves:[72,72,73,72],
+ levante:[71,71,72,71],
+ elche:[70,70,71,70],
+ racing:[70,70,71,70],
+ malaga:[69,69,70,69]
 };
 // The following individual four-attribute profiles are from the published FC 27
 // launch database: https://www.ea.com/games/ea-sports-fc/ratings
@@ -120,11 +171,28 @@ const RESERVES={
  juve:'1|Mattia Perin|GK;6|Lloyd Kelly|CB;16|Weston McKennie|CM;11|Nicolas Gonzalez|RW;18|Dusan Vlahovic|ST',
  psg:'39|Matvey Safonov|GK;21|Lucas Hernandez|CB;33|Warren Zaire-Emery|CM;14|Desire Doue|RW;29|Bradley Barcola|LW',
  monaco:'16|Philipp Kohn|GK;5|Thilo Kehrer|CB;4|Jordan Teze|RB;17|Eliesse Ben Seghir|AM;36|Breel Embolo|ST',
- marseille:'12|Geronimo Rulli|GK;5|Leonardo Balerdi|CB;6|Valentin Rongier|CM;10|Mason Greenwood|RW;8|Amine Harit|AM'
+ marseille:'12|Geronimo Rulli|GK;5|Leonardo Balerdi|CB;6|Valentin Rongier|CM;10|Mason Greenwood|RW;8|Amine Harit|AM',
+ athletic:'13|Alex Padilla|GK;14|Aitor Paredes|CB;15|Alex Berenguer|CM;16|Robert Navarro|ST',
+ betis:'13|Diego Conde|GK;14|Valentin Gomez|CB;15|Giovani Lo Celso|CM;16|Aitor Ruibal|ST',
+ villarreal:'13|Peter Gulacsi|GK;14|Logan Costa|CB;15|Tajon Buchanan|CM;16|Ayoze Perez|ST',
+ sociedad:'13|Unai Marrero|GK;14|Aihen Munoz|CB;15|Benat Turrientes|CM;16|Orri Oskarsson|ST',
+ celta:'13|Ivan Villar|GK;14|Javi Rueda|CB;15|Pablo Duran|CM;16|Ferran Jutgla|ST',
+ osasuna:'13|Aitor Fernandez|GK;14|Jorge Herrando|CB;15|Iker Munoz|CM;16|Raul Garcia de Haro|ST',
+ rayo:'13|Dani Cardenas|GK;14|Nobel Mendy|CB;15|Oscar Valentin|CM;16|Sergio Camello|ST',
+ valencia:'13|Cristian Rivero|GK;14|Jesus Vazquez|CB;15|Andre Almeida|CM;16|Luis Rioja|ST',
+ espanyol:'13|Angel Fortuno|GK;14|Ruben Sanchez|CB;15|Jofre Carreras|CM;16|Kike Garcia|ST',
+ sevilla:'13|Fran Gonzalez|GK;14|Juan Iglesias|CB;15|Manu Bueno|CM;16|Alfon Gonzalez|ST',
+ deportivo:'13|German Parreno|GK;14|Ximo Navarro|CB;15|Jairo Noriega|CM;16|Zakaria Eddahchouri|ST',
+ getafe:'13|Jiri Letacek|GK;14|Abdel Abqar|CB;15|Orel Mangala|CM;16|Martin Satriano|ST',
+ alaves:'13|Jesus Owono|GK;14|Nico Valentini|CB;15|Pablo Ibanez|CM;16|Carlos Alena|ST',
+ levante:'13|Dani Martin|GK;14|Victor Garcia|CB;15|Hugo Sotelo|CM;16|Paco Cortes|ST',
+ elche:'13|Juan Iturbe|GK;14|Dani Martin|CB;15|Fede Redondo|CM;16|Facundo Buonanotte|ST',
+ racing:'13|Julen Agirrezabala|GK;14|Jorge Salinas|CB;15|Asier Villalibre|CM;16|Yassir Zabiri|ST',
+ malaga:'13|Carlos Lopez|GK;14|Rafita|CB;15|Ramon Enriquez|CM;16|Adrian Nino|ST'
 };
 const group=role=>role==='GK'?'GK':['RB','LB','CB','RWB','LWB'].includes(role)?'DEF':['DM','CM','AM'].includes(role)?'MID':'ATT';
 export function buildBench(team,side){
- const raw=(RESERVES[team.id]||'').split(';');const taken=new Set(team.players.map(p=>p.number));
+ const raw=(RESERVES[team.id]||'').split(';').filter(Boolean);const taken=new Set(team.players.map(p=>p.number));
  return raw.map((entry,i)=>{
  const [num,name,role]=entry.split('|');let number=Number(num);while(taken.has(number))number++;taken.add(number);
  const rating=BENCH_OVR[team.id]?.[i]??Math.max(68,team.rating-6);

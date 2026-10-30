@@ -1,4 +1,4 @@
-import {buildLineup,buildBench} from './teams.js?v=0.2.3';
+import {buildLineup,buildBench} from './teams.js?v=0.2.4';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -32,16 +32,16 @@ export class MatchEngine{
    const q=this.localToWorld(s,p.anchor.x,p.anchor.y);p.x=p.fx=q.x;p.y=p.fy=q.y;
   }
   this.ball.owner=null;this.ball.flight=null;this.carrier=null;this.ball.x=52.5;this.ball.y=34;
-  if(kickoff){this.restartAt('kickoff',side,{x:52.5,y:34},2.25);this.possession=side;this.phase='saque de centro'}
+  if(kickoff){this.restartAt('kickoff',side,{x:52.5,y:34},1.4);this.possession=side;this.phase='saque de centro'}
  }
  start(){if(this.status!=='preview')return;this.status='live';this.add('start',-1,'Comienza el partido.');this.reposition(0,true)}
  resumeHalf(){if(this.status!=='halftime')return;this.half=2;this.time=2700;this.pendingPeriod=null;this.periodStart=null;this.status='live';this.add('half',-1,'Comienza la segunda parte. Los equipos cambian de campo.');this.reposition(1,true)}
  isActive(p){return !p.red}
  nearest(side,x,y,filter=()=>true){let best=null,d=1e9;for(const p of this.teams[side])if(!p.red&&filter(p)){const v=hypot(p.x-x,p.y-y);if(v<d){best=p;d=v}}return best}
  keeper(side){return this.teams[side][0]}
- hold(p){this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.phase='posesion';this.decision=this.random(.85,1.65);this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null}
+ hold(p){this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.phase='posesion';this.decision=this.random(.40,.88);this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null}
  ballFree(){this.ball.owner=null;this.carrier=null}
- kickoff(side){this.lastPass=null;this.restartAt('kickoff',side,{x:52.5,y:34},1.75)}
+ kickoff(side){this.lastPass=null;this.restartAt('kickoff',side,{x:52.5,y:34},1.15)}
  restartAt(type,side,spot,wait=1.8){
   this.ballFree();this.lastPass=null;
   this.ball.flight=null;this.ball.x=clamp(spot.x,0,105);this.ball.y=clamp(spot.y,0,68);
@@ -192,7 +192,7 @@ export class MatchEngine{
     p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
     const pressureStyle=this.clubs[side].style==='presion'?1.14:1;
     const delta=hypot(p.fx-p.x,p.fy-p.y);
-    const speed=p.i===0?2.5:(p===owner?3.5:pressers[0]===p?6.0*pressureStyle:pressers[1]===p?5.3:4.7)*(.75+p.skills.pace/300)*(.75+.25*p.energy);
+    const speed=p.i===0?2.5:(p===owner?3.5:pressers[0]===p?6.0*pressureStyle:pressers[1]===p?5.7:5.15)*(.75+p.skills.pace/300)*(.75+.25*p.energy);
     if(delta>.01){const step=Math.min(delta,speed*dt);p.x+=step*(p.fx-p.x)/delta;p.y+=step*(p.fy-p.y)/delta}
    }
   }
@@ -304,23 +304,25 @@ export class MatchEngine{
    return t>.07&&t<.96&&perpendicular<2.7;
   }).length;
   const nearby=defending.reduce((v,q)=>Math.min(v,dist(q,p)),30);
-  const skill=clamp(.88+(p.skills.shot-80)*.008,.65,1.18);
-  const xg=clamp(.47*Math.exp(-Math.max(0,distance-7)/14)*angleFactor*
+  const skill=clamp(.88+(p.skills.shot-80)*.009+(this.clubs[p.side].rating-78)*.006,.58,1.28);
+  const xg=clamp(.54*Math.exp(-Math.max(0,distance-7)/14)*angleFactor*
    (1-Math.min(4,blockers)*.13)*skill*(nearby<2.5?.78:1),.003,.70);
   return {distance,angleFactor,blockers,nearby,xg};
  }
  shouldShoot(p,quality=this.shotQuality(p)){
   const {distance,angleFactor,blockers,xg}=quality;
-  if(distance>33||angleFactor<.14)return false;
+  if(distance>32||angleFactor<.14)return false;
   const forward=this.direction(p.side);
   const betterTeammate=this.teams[p.side].some(q=>q!==p&&q.i>0&&!q.red&&
    (q.x-p.x)*forward>3&&hypot(this.goalX(p.side)-q.x,q.y-34)<distance-4&&
    dist(p,q)<24&&this.teams[1-p.side].every(d=>d.i===0||dist(q,d)>3.4));
-  let rate=distance<10?.92:distance<16?.76:distance<23?.38:distance<29?.15:.009;
-  rate*=clamp(.52+xg*2.25,.38,1.45);
+  let rate=distance<10?.99:distance<16?.87:distance<23?.43:distance<29?.16:.009;
+  rate*=clamp(.68+xg*2.1,.46,1.55);
   rate*=clamp(1-blockers*.20,.23,1);
-  if(betterTeammate)rate*=.32;
-  if(quality.nearby<2.2&&distance>12)rate*=.65;
+  if(betterTeammate)rate*=distance<12?.65:.40;
+  if(quality.nearby<2.2&&distance>12)rate*=.60;
+   if(distance<11&&angleFactor>.62&&blockers===0)rate=Math.max(rate,.93);
+   if(distance>=13)rate*=.60;else if(distance>=10)rate*=.82;
   return this.rng()<rate;
  }
  decide(p){if(p.red){this.ballFree();return}
@@ -332,10 +334,10 @@ export class MatchEngine{
   if(press<3&&this.rng()<.065){this.foul(p,nearest);return}
   if(press<2.5&&this.rng()<.12){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
   // A clear carrier may advance before making another choice.
-  if((quality.distance>36&&press>5&&this.rng()<.18)||(press>7&&this.rng()<.12)){this.decision=this.random(.55,1.05);return}
+  if((quality.distance>36&&press>5&&this.rng()<.18)||(press>7&&this.rng()<.12)){this.decision=this.random(.38,.70);return}
   const receiver=this.findReceiver(p);
   if(receiver){this.pass(p,receiver);return}
-  this.decision=.65;
+  this.decision=.43;
  }
  findReceiver(p){
   const side=p.side,dir=this.direction(side),style=this.clubs[side].style;
@@ -378,18 +380,19 @@ export class MatchEngine{
   this.stats[side].passes++;
   const offside=!setPiece&&this.isOffside(from,to);
   const start={x:this.ball.x,y:this.ball.y};
-  // Miscontrolled passes near the touchline roll out in an actual ball flight.
-  if(!setPiece && Math.min(from.y,68-from.y,to.y,68-to.y)<14 && this.rng()<.20){
-   const end={x:clamp(to.x+this.random(-3,3),2,103),y:(to.y<34?-1:69)};
-   this.ballFree();this.ball.flight={type:'clearance',side,from,start,end,t:0,duration:clamp(dist(start,end)/30,.35,1.35),lastSide:side};
-   this.add('touchline',side,`El pase de ${from.name} se marcha por la banda.`,from);return;
-  }
-  // Predict a bounded receiving point, leaving the receiver time to run onto the ball.
+  // Every normal pass targets a legal reception point; throw-ins are generated by actual clearances.
+   // Predict a bounded receiving point, leaving the receiver time to run onto the ball.
   const advance=(to.x-from.x)*this.direction(side);
   const end={x:clamp(to.x+this.direction(side)*(advance>0?Math.min(3,advance*.13):0),2,103),y:clamp(to.y+this.random(-.6,.6),2,66)};
   this.ballFree();this.ball.x=start.x;this.ball.y=start.y;
   const d=dist(start,end);
-  this.ball.flight={type:'pass',side,from,to,start,end,t:0,duration:clamp(d/36,.34,1.65),setPiece,offside};
+  const defender=this.nearest(1-side,end.x,end.y,p=>p.i>0);
+   const pressure=this.nearest(1-side,from.x,from.y,p=>p.i>0);
+   const chanceError=clamp(.125+(78-from.skills.pass)*.0068+(d-17)*.0015+
+       (pressure&&dist(pressure,from)<4?.075:0)-(this.clubs[side].rating-77)*.003,.025,.27);
+   const interceptedBy=!setPiece&&!offside&&defender&&this.rng()<chanceError?defender:null;
+   const finish=interceptedBy?{x:clamp(interceptedBy.x,2,103),y:clamp(interceptedBy.y,2,66)}:end;
+   this.ball.flight={type:'pass',side,from,to,start,end:finish,t:0,duration:clamp(dist(start,finish)/47,.26,1.32),setPiece,offside,interceptedBy};
   if(offside){const defenders=this.teams[1-side].filter(p=>!p.red).map(p=>p.x*this.direction(side)).sort((a,b)=>b-a);this.offsideMark={x:defenders[1]*this.direction(side),ttl:4.5};}
   this.phase='pase';this.add('pass',side,`${from.name} juega para ${to.name}.`,from,{receiver:to.name});
  }
@@ -402,15 +405,15 @@ export class MatchEngine{
   const keeperMod=clamp(1+(80-keeperRating)*.005,.86,1.13);
   const xg=penalty?.76:freeKick?clamp(quality.xg*.66,.018,.18):header?clamp(quality.xg*.78,.012,.34):clamp(quality.xg*keeperMod,.004,.65);
   this.stats[side].shots++;this.stats[side].xg+=xg;
-  const onTarget=this.rng()<(penalty?.91:clamp(.70-(d>24?.10:0)-quality.blockers*.035+(from.skills.shot-83)*.004,.35,.87));
-  const goalChance=onTarget&&(this.rng()<clamp(xg/Math.max(.2,penalty?.91:.65),0,.96));
+  const onTarget=this.rng()<(penalty?.91:clamp(.77-(d>24?.13:0)-quality.blockers*.045+(from.skills.shot-83)*.005,.38,.92));
+  const goalChance=onTarget&&(this.rng()<clamp(xg/Math.max(.2,penalty?.91:1.04),0,.94));
   const targetY=onTarget?this.random(31.2,36.8):(this.rng()<.5?this.random(25,29.3):this.random(38.7,43));
   const assist=!penalty&&!freeKick&&this.lastPass?.side===side&&this.lastPass?.to===from.id&&this.time-this.lastPass.time<150?this.lastPass.from:null;
   const start={x:this.ball.x,y:this.ball.y};
   const outcome=goalChance?'goal':onTarget?'save':'miss';
   const keeper=this.keeper(1-side),saveY=clamp(targetY,31,37);
   const end=outcome==='save'?{x:goal-dir*(2.0+this.random(0,1.4)),y:saveY}:{x:goal+dir*.7,y:targetY};
-  this.ballFree();this.ball.flight={type:'shot',side,from,start,end,t:0,duration:clamp(d/42,.35,1.05),goalChance,onTarget,xg,penalty,freeKick,header,assist,outcome,keeper};
+  this.ballFree();this.ball.flight={type:'shot',side,from,start,end,t:0,duration:clamp(d/47,.28,.88),goalChance,onTarget,xg,penalty,freeKick,header,assist,outcome,keeper};
   this.phase=penalty?'penalti':freeKick?'falta directa':'disparo';
   this.add('shot',side,penalty?`${from.name} lanza el penalti.`:freeKick?`${from.name} ejecuta la falta directa.`:`${from.name} ${header?'cabecea':'remata'} a portería.`,from,{xg});
  }
@@ -427,7 +430,7 @@ export class MatchEngine{
   const chance=this.rng();if(chance<.008){defender.red=true;this.stats[1-side].reds++;this.add('red',1-side,`${defender.name} es expulsado.`,defender)}
   else if(chance<.16){defender.card=true;this.stats[1-side].yellows++;this.add('yellow',1-side,`Amarilla para ${defender.name}.`,defender)}
   const inBox=Math.abs(where.x-this.goalX(side))<16.5&&Math.abs(where.y-34)<20.15;
-  if(inBox){const spot={x:this.goalX(side)-this.direction(side)*11,y:34};this.add('penalty',side,`¡Penalti para ${this.clubs[side].name}!`);this.restartAt('penalty',side,spot,2.4)}
+  if(inBox){const spot={x:this.goalX(side)-this.direction(side)*11,y:34};this.add('penalty',side,`¡Penalti para ${this.clubs[side].name}!`);this.restartAt('penalty',side,spot,1.85)}
   else {this.stats[side].freeKicks++;this.restartAt('freekick',side,where,1.6)}
  }
  updateFlight(dt){
@@ -443,7 +446,7 @@ export class MatchEngine{
   }
   if(u<1)return;
   this.ball.flight=null;
-  if(f.type==='clearance'){const side=1-f.lastSide,spot={x:clamp(f.end.x,1,104),y:f.end.y<34?0:68};this.add('throwIn',side,`Saque de banda para ${this.clubs[side].name}.`);this.stats[side].throwIns++;this.restartAt('throwIn',side,spot,1.4);return}
+  if(f.type==='clearance'){const side=1-f.lastSide,spot={x:clamp(f.end.x,1,104),y:f.end.y<34?0:68};this.add('throwIn',side,`Saque de banda para ${this.clubs[side].name}.`);this.stats[side].throwIns++;this.restartAt('throwIn',side,spot,1.06);return}
   if(f.type==='shot'){
    if(f.onTarget)this.stats[f.side].onTarget++;
    if(f.goalChance){
@@ -451,15 +454,22 @@ export class MatchEngine{
     this.add('goal',f.side,`¡GOOOL! ${f.from.name}${f.penalty?' (p.)':''}${f.assist?' · asistencia de '+f.assist:''} · ${this.clubs[f.side].name}.`,f.from);
     this.kickoff(1-f.side);return;
    }
-   if(f.onTarget){const keeper=this.keeper(1-f.side);this.stats[1-f.side].saves++;const corner=this.rng()<.34;
+   if(f.onTarget){const keeper=this.keeper(1-f.side);this.stats[1-f.side].saves++;const corner=this.rng()<.43;
     this.add('save',1-f.side,`${keeper.name} detiene el disparo de ${f.from.name}.`,keeper);
-    if(corner){this.stats[f.side].corners++;this.add('corner',f.side,`Córner para ${this.clubs[f.side].name}.`);this.restartAt('corner',f.side,{x:this.goalX(f.side),y:f.end.y<34?0:68},1.8)}
+    if(corner){this.stats[f.side].corners++;this.add('corner',f.side,`Córner para ${this.clubs[f.side].name}.`);this.restartAt('corner',f.side,{x:this.goalX(f.side),y:f.end.y<34?0:68},1.42)}
     else this.restartAt('goalKick',1-f.side,{x:this.ownGoalX(1-f.side)+this.direction(1-f.side)*5.5,y:34},1.1);
-   }else{if(this.rng()<.12){this.stats[f.side].corners++;this.add('corner',f.side,`Desvío defensivo: córner para ${this.clubs[f.side].name}.`);this.restartAt('corner',f.side,{x:this.goalX(f.side),y:f.end.y<34?0:68},1.8)}else{this.add('miss',f.side,`${f.from.name} remata fuera.`,f.from);this.restartAt('goalKick',1-f.side,{x:this.ownGoalX(1-f.side)+this.direction(1-f.side)*5.5,y:34},1.1)}}
+   }else{if(this.rng()<.16){this.stats[f.side].corners++;this.add('corner',f.side,`Desvío defensivo: córner para ${this.clubs[f.side].name}.`);this.restartAt('corner',f.side,{x:this.goalX(f.side),y:f.end.y<34?0:68},1.8)}else{this.add('miss',f.side,`${f.from.name} remata fuera.`,f.from);this.restartAt('goalKick',1-f.side,{x:this.ownGoalX(1-f.side)+this.direction(1-f.side)*5.5,y:34},1.1)}}
    return;
   }
   if(f.type==='pass'){
-   if(f.offside){this.stats[f.side].offsides++;this.add('offside',f.side,`Fuera de juego de ${f.to.name}.`,f.to,{line:this.offsideMark?.x});this.restartAt('indirect',1-f.side,{x:clamp(f.to.x,4,101),y:clamp(f.to.y,4,64)},1.35);return}
+    if(f.interceptedBy&&!f.interceptedBy.red){
+      const defender=f.interceptedBy;
+      this.stats[defender.side].interceptions++;
+      this.hold(defender);this.lastPass=null;
+      this.add('interception',defender.side,`${defender.name} corta el envío de ${f.from.name}.`,defender);
+      return;
+    }
+    if(f.offside){this.stats[f.side].offsides++;this.add('offside',f.side,`Fuera de juego de ${f.to.name}.`,f.to,{line:this.offsideMark?.x});this.restartAt('indirect',1-f.side,{x:clamp(f.to.x,4,101),y:clamp(f.to.y,4,64)},1.35);return}
    this.stats[f.side].completed++;
    const recipient=f.to;if(recipient.red){this.restartAt('freekick',1-f.side,{x:f.end.x,y:f.end.y},1);return}
    // Receiver arrives at the ball; keep the ball in place and let the receiver collect it.
