@@ -23,3 +23,24 @@
 .ai-inspector strong{color:#f2faef;font-size:13px}
 .ai-inspector span{font-size:11px;color:#cfebec}
 .ai-inspector small{font-size:11px;color:#9ebfce}
+
+/* MatchLab 0.4.1 — genuine substitution break */
+.sub-moment{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(3,17,25,.81);backdrop-filter:blur(3px);pointer-events:none}
+.sub-board{width:min(570px,100%);background:#0a202b;border:1px solid #4d8d83;box-shadow:0 14px 55px #00131799;border-radius:16px;overflow:hidden;animation:sub-appear .3s ease both}
+.sub-board-head{display:flex;justify-content:space-between;align-items:center;padding:11px 17px;background:#183b43;color:#d5fbe9;font-size:13px;font-weight:900;letter-spacing:.075em}
+.sub-board-head strong{font-size:22px;font-variant-numeric:tabular-nums;color:#e9fac0}
+.sub-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:9px;padding:12px}
+.sub-card{border-left:4px solid var(--sub-accent);border-radius:10px;background:#142f3c;overflow:hidden}
+.sub-club{padding:9px 12px 5px;color:#d9f2ef;font-weight:800;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-player{display:flex;align-items:center;gap:9px;padding:7px 10px;min-height:43px}
+.sub-player + .sub-player{border-top:1px solid #ffffff19}
+.sub-arrow{width:27px;font-size:25px;font-weight:900;line-height:1;text-align:center}
+.sub-out .sub-arrow,.sub-out small{color:#fa8f88}
+.sub-in .sub-arrow,.sub-in small{color:#9af5ad}
+.sub-number{display:flex;align-items:center;justify-content:center;min-width:31px;min-height:30px;border:1px solid #669087;border-radius:7px;font-weight:900;font-size:14px;color:#fff}
+.sub-name{flex:1;color:#f3fff7;font-weight:700;font-size:12px;line-height:1.25}
+.sub-player small{font-weight:900;letter-spacing:.06em;font-size:9px}
+.sub-board-foot{text-align:center;color:#b2d3ce;font-size:10px;font-weight:800;letter-spacing:.08em;padding:10px;background:#102b35;border-top:1px solid #ffffff19}
+@keyframes sub-appear{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media(max-width:620px){.sub-moment{padding:8px}.sub-board-head{padding:8px 12px;font-size:11px}.sub-cards{padding:7px;gap:5px}.sub-club{padding:6px 9px 3px}.sub-player{padding:4px 8px;min-height:34px}.sub-board-foot{font-size:9px;padding:6px}}
+@media(prefers-reduced-motion:reduce){.sub-board{animation:none}}

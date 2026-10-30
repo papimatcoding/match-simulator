@@ -2,7 +2,7 @@
 // Players encoded as "number|name". Positions come from the declared 4-3-3 / 4-2-3-1 / 3-5-2 template.
 const R = (str) => str.split(';').map(item => {const [number,name] = item.trim().split('|');return {number:Number(number),name};});
 const T=(id,name,league,rating,style,color,formation,raw,source)=>({id,name,league,rating,style,color,formation,players:R(raw),source,ratings:{attack:Math.min(94,rating+(style==='vertical'?2:1)),midfield:Math.min(94,rating+(style==='posesion'?2:0)),defense:Math.min(94,rating+(style==='bloque'?2:0))}});
-export const RATINGS_REVISION='0.4.0';
+export const RATINGS_REVISION='0.4.1';
 export const LEAGUES = ['Premier League','LaLiga','Bundesliga','Serie A','Ligue 1'];
 export const TEAMS = [
 T('arsenal','Arsenal','Premier League',88,'posesion','#ec364b','433','1|David Raya;12|Jurrien Timber;2|William Saliba;6|Gabriel Magalhaes;5|Piero Hincapie;36|Martin Zubimendi;41|Declan Rice;8|Martin Odegaard;7|Bukayo Saka;14|Viktor Gyokeres;10|Eberechi Eze','https://www.premierleague.com/en/news/4725682'),
@@ -153,23 +153,23 @@ export function buildLineup(team, side){
  });
 }
 
-// Small illustrative substitute lists for laboratory rotation. These are editorial
-// sample choices, NOT verified official match-day benches for October 2026.
+// Illustrative match benches, checked for club ownership against 2026/27 sources.
+// Not verified match-day selections; all 33 squads remain experimental examples.
 const RESERVES={
  arsenal:'13|Kepa Arrizabalaga|GK;49|Myles Lewis-Skelly|LB;11|Gabriel Martinelli|LW;29|Kai Havertz|ST;23|Mikel Merino|CM',
  liverpool:'25|Giorgi Mamardashvili|GK;2|Joe Gomez|CB;17|Curtis Jones|CM;18|Cody Gakpo|LW;14|Federico Chiesa|RW',
  mancity:'18|Stefan Ortega|GK;27|Matheus Nunes|RB;8|Mateo Kovacic|CM;20|Bernardo Silva|AM;26|Savinho|RW',
- chelsea:'12|Filip Jorgensen|GK;5|Benoit Badiashile|CB;8|Enzo Fernandez|CM;11|Noni Madueke|RW;18|Christopher Nkunku|ST',
- barca:'13|Wojciech Szczesny|GK;4|Ronald Araujo|CB;6|Gavi|CM;20|Dani Olmo|AM;7|Ferran Torres|ST',
+ chelsea:'39|Mike Penders|GK;5|Maxence Lacroix|CB;45|Romeo Lavia|CM;11|Jamie Gittens|RW;18|Danny Welbeck|ST',
+ barca:'13|Wojciech Szczesny|GK;15|Andreas Christensen|CB;6|Gavi|CM;20|Dani Olmo|AM;14|Karim Adeyemi|ST',
  madrid:'13|Andriy Lunin|GK;22|Antonio Rudiger|CB;6|Eduardo Camavinga|CM;15|Arda Guler|AM;16|Brahim Diaz|RW',
  atleti:'1|Juan Musso|GK;2|Jose Maria Gimenez|CB;5|Rodrigo de Paul|CM;7|Antoine Griezmann|AM;9|Alexander Sorloth|ST',
  bayern:'26|Sven Ulreich|GK;3|Kim Min-jae|CB;8|Leon Goretzka|CM;7|Serge Gnabry|RW;11|Kingsley Coman|LW',
- dortmund:'33|Alexander Meyer|GK;5|Ramy Bensebaini|CB;13|Pascal Gross|CM;10|Julian Brandt|AM;27|Karim Adeyemi|ST',
+ dortmund:'33|Alexander Meyer|GK;5|Ramy Bensebaini|CB;20|Marcel Sabitzer|CM;19|Konstantinos Karetsas|AM;21|Fabio Silva|ST',
  leverkusen:'28|Janis Blaswich|GK;5|Loic Bade|CB;7|Jonas Hofmann|AM;21|Amine Adli|RW;9|Martin Hlozek|ST',
  inter:'12|Raffaele Di Gennaro|GK;15|Francesco Acerbi|CB;22|Henrikh Mkhitaryan|CM;7|Piotr Zielinski|CM;11|Luis Henrique|ST',
  milan:'57|Marco Sportiello|GK;46|Matteo Gabbia|CB;29|Youssouf Fofana|CM;10|Rafael Leao|LW;7|Santiago Gimenez|ST',
  juve:'1|Mattia Perin|GK;6|Lloyd Kelly|CB;16|Weston McKennie|CM;11|Nicolas Gonzalez|RW;18|Dusan Vlahovic|ST',
- psg:'39|Matvey Safonov|GK;21|Lucas Hernandez|CB;33|Warren Zaire-Emery|CM;14|Desire Doue|RW;29|Bradley Barcola|LW',
+ psg:'39|Matvey Safonov|GK;21|Lucas Hernandez|CB;33|Warren Zaire-Emery|CM;14|Desire Doue|RW;22|Mika Godts|LW',
  monaco:'16|Philipp Kohn|GK;5|Thilo Kehrer|CB;4|Jordan Teze|RB;17|Eliesse Ben Seghir|AM;36|Breel Embolo|ST',
  marseille:'12|Geronimo Rulli|GK;5|Leonardo Balerdi|CB;6|Valentin Rongier|CM;10|Mason Greenwood|RW;8|Amine Harit|AM',
  athletic:'13|Alex Padilla|GK;14|Aitor Paredes|CB;15|Alex Berenguer|CM;16|Robert Navarro|ST',
@@ -186,7 +186,7 @@ const RESERVES={
  getafe:'13|Jiri Letacek|GK;14|Abdel Abqar|CB;15|Orel Mangala|CM;16|Martin Satriano|ST',
  alaves:'13|Jesus Owono|GK;14|Nico Valentini|CB;15|Pablo Ibanez|CM;16|Carlos Alena|ST',
  levante:'13|Dani Martin|GK;14|Victor Garcia|CB;15|Hugo Sotelo|CM;16|Paco Cortes|ST',
- elche:'13|Juan Iturbe|GK;14|Dani Martin|CB;15|Fede Redondo|CM;16|Facundo Buonanotte|ST',
+ elche:'13|Juan Iturbe|GK;14|Kevin Lomonaco|CB;15|Fede Redondo|CM;16|Facundo Buonanotte|ST',
  racing:'13|Julen Agirrezabala|GK;14|Jorge Salinas|CB;15|Asier Villalibre|CM;16|Yassir Zabiri|ST',
  malaga:'13|Carlos Lopez|GK;14|Rafita|CB;15|Ramon Enriquez|CM;16|Adrian Nino|ST'
 };
@@ -200,4 +200,17 @@ export function buildBench(team,side){
  anchor:{x:48,y:34},rating,skills:estimatedSkills(name,role,rating),
  x:52.5,y:34,fx:52.5,fy:34,energy:1,card:false,red:false};
  });
+}
+// Audits club ownership across starting XIs and illustrative benches.
+export function auditRosterOwnership(){
+ const owners=new Map(),collisions=[];
+ const normalise=name=>name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+ for(const club of TEAMS){
+  for(const player of [...buildLineup(club,0),...buildBench(club,0)]){
+   const key=normalise(player.name),previous=owners.get(key);
+   if(previous&&previous!==club.id)collisions.push({name:player.name,clubs:[previous,club.id]});
+   else owners.set(key,club.id);
+  }
+ }
+ return collisions;
 }

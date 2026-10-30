@@ -1,8 +1,8 @@
-import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.4.0';
-import {MatchEngine} from './engine.js?v=0.4.0';
-import {PitchRenderer} from './render.js?v=0.4.0';
-import {TACTICS,defaultTactic} from './tactics.js?v=0.4.0';
-import {ROLES,eligibleRoles,ROLE_FOCUS} from './roles.js?v=0.4.0';
+import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.4.1';
+import {MatchEngine} from './engine.js?v=0.4.1';
+import {PitchRenderer} from './render.js?v=0.4.1';
+import {TACTICS,defaultTactic} from './tactics.js?v=0.4.1';
+import {ROLES,eligibleRoles,ROLE_FOCUS} from './roles.js?v=0.4.1';
 const $=q=>document.querySelector(q);
 // The displayed revision proves which ratings dataset the browser has loaded.
 const revisionLabel=document.getElementById('ratings-revision');
@@ -20,6 +20,7 @@ for(const id of ['tactic-home','tactic-away','live-tactic-home','live-tactic-awa
 by('tactic-home').value=defaultTactic(TEAMS.find(t=>t.id==='barca'));
 by('tactic-away').value=defaultTactic(TEAMS.find(t=>t.id==='madrid'));
 let game=null,renderer=null,running=false,speed=1,lastFrame=0,accum=0,lastUI=0,lastEv=0,tab='feed';
+let subHold=0,lastSubMomentId=0;
 function selected(){return [TEAMS.find(t=>t.id===by('home').value),TEAMS.find(t=>t.id===by('away').value)]}
 function syncSelection(){const [home,away]=selected();for(const [side,t] of [['home',home],['away',away]])by(side+'-profile').innerHTML=`${icon(t)}<div class="prof-info"><strong>${esc(t.name)}</strong><small>ATA ${t.ratings.attack} · MED ${t.ratings.midfield} · DEF ${t.ratings.defense}<br>${esc(t.style.toUpperCase())} · ${t.formation.replace('433','4-3-3').replace('4231','4-2-3-1').replace('352','3-5-2')}</small></div><div class="ovr" title="Global estimada">${t.rating}</div>`;by('new-match').disabled=home.id===away.id}
 by('home').addEventListener('change',()=>{by('tactic-home').value=defaultTactic(selected()[0]);syncSelection()});
@@ -32,6 +33,21 @@ const roleLabel=p=>ROLES[p.aiRole]?.label||p.role;
 const proficiency=p=>p.aiFamiliarity===2?'Rol++':p.aiFamiliarity===1?'Rol+':'Base';
 const roleOptions=p=>eligibleRoles(p.role).map(key=>`<option value="${key}"${p.aiRole===key?' selected':''}>${ROLES[key].label}</option>`).join('');
 function lineup(team,side){const players=game.teams[side];return `<div class="lineup-head">${icon(team)}<div><h3>${esc(team.name)}</h3><small>${esc(team.league)} · ${team.formation==='433'?'4-3-3':team.formation==='4231'?'4-2-3-1':'3-5-2'} · ${esc(TACTICS[game.tactics[side]].label)}</small></div><div class="lineup-pos">${team.rating}</div></div>${players.map(p=>`<div class="playerline"><span class="number">${p.number}</span><span>${esc(p.name)}</span><span class="role">${p.role}</span><span class="value">${p.rating}</span><div class="role-config"><label>ROL <select class="player-role" data-side="${side}" data-index="${p.i}">${roleOptions(p)}</select></label><label>ENFOQUE <select class="player-focus" data-side="${side}" data-index="${p.i}">${ROLE_FOCUS.map(f=>`<option value="${f}"${p.aiFocus===f?' selected':''}>${f}</option>`).join('')}</select></label><small class="role-level">${proficiency(p)}</small></div></div>`).join('')}`}
+function showSubMoment(moment){
+ const markup=moment.changes.map(change=>{
+  const accent=/^#[0-9a-f]{6}$/i.test(change.color)?change.color:'#5dc2a0';
+  return `<div class="sub-card" style="--sub-accent:${accent}">
+    <div class="sub-club">${esc(change.team)}</div>
+    <div class="sub-player sub-out"><span class="sub-arrow">↓</span><span class="sub-number">${change.out.number}</span><span class="sub-name">${esc(change.out.name)}</span><small>SALE</small></div>
+    <div class="sub-player sub-in"><span class="sub-arrow">↑</span><span class="sub-number">${change.in.number}</span><span class="sub-name">${esc(change.in.name)}</span><small>ENTRA</small></div>
+   </div>`;
+ }).join('');
+ by('sub-moment').innerHTML=`<div class="sub-board">
+  <div class="sub-board-head"><span>CAMBIO DE JUGADORES</span><strong>${moment.minute}'</strong></div>
+  <div class="sub-cards">${markup}</div><div class="sub-board-foot">PARTIDO DETENIDO · REANUDACIÓN AUTOMÁTICA</div>
+ </div>`;
+ show(by('sub-moment'),true);
+}
 function changeScreen(id){for(const name of ['setup','pregame','game'])show(by(name),id===name)}
 function setupMatch(){const [h,a]=selected();if(h.id===a.id)return;
  game=new MatchEngine(h,a,Math.floor(Math.random()*4294967295),{tactics:[by('tactic-home').value,by('tactic-away').value]});changeScreen('pregame');by('lineup-home').innerHTML=lineup(h,0);by('lineup-away').innerHTML=lineup(a,1);window.scrollTo({top:0,behavior:'smooth'})}
@@ -46,7 +62,7 @@ by('new-match').onclick=setupMatch;by('change').onclick=()=>changeScreen('setup'
 function startMatch(){if(!game)return;changeScreen('game');by('short-home').textContent=game.clubs[0].name;by('short-away').textContent=game.clubs[1].name;by('score-home-meta').textContent=TACTICS[game.tactics[0]].label;by('score-away-meta').textContent=TACTICS[game.tactics[1]].label;
   by('live-tactic-home').value=game.tactics[0];by('live-tactic-away').value=game.tactics[1];
  by('ingame-lineups').innerHTML=game.clubs.map((team,side)=>`<div class="mini-lineup"><header>${esc(team.name)}</header>${game.teams[side].map(p=>`<div><b>${p.number}</b><span>${esc(p.name)}</span></div>`).join('')}</div>`).join('');
- renderer=renderer||new PitchRenderer(by('pitch'));renderer.resize();game.start();speed=1;running=true;lastFrame=0;accum=0;lastEv=0;lastUI=0;aiDebug=false;game.debugAI=false;game.selectedPlayer=game.teams[0][9];show(by('ai-inspector'),false);by('debug').textContent='Analizar IA';document.body.classList.remove('read-mode');by('view').textContent='Solo relato';by('speed').textContent='Velocidad 1×';by('pause').textContent='Ⅱ Pausar';show(by('overlay'),false);refresh(true);window.scrollTo({top:0,behavior:'smooth'});requestAnimationFrame(loop)}
+ renderer=renderer||new PitchRenderer(by('pitch'));renderer.resize();game.start();speed=1;running=true;lastFrame=0;accum=0;lastEv=0;lastUI=0;subHold=0;lastSubMomentId=0;show(by('sub-moment'),false);aiDebug=false;game.debugAI=false;game.selectedPlayer=game.teams[0][9];show(by('ai-inspector'),false);by('debug').textContent='Analizar IA';document.body.classList.remove('read-mode');by('view').textContent='Solo relato';by('speed').textContent='Velocidad 1×';by('pause').textContent='Ⅱ Pausar';show(by('overlay'),false);refresh(true);window.scrollTo({top:0,behavior:'smooth'});requestAnimationFrame(loop)}
 by('start').onclick=startMatch;
 by('pause').onclick=()=>{if(!game||game.status!=='live')return;running=!running;by('pause').textContent=running?'Ⅱ Pausar':'▶ Reanudar'};
 by('speed').onclick=()=>{speed=speed===1?.5:speed===.5?2:speed===2?4:1;by('speed').textContent=`Velocidad ${speed}×`};
@@ -73,7 +89,7 @@ function refreshAI(){
 }
 by('view').onclick=()=>{document.body.classList.toggle('read-mode');by('view').textContent=document.body.classList.contains('read-mode')?'Ver campo':'Solo relato'};
 by('fullscreen').onclick=()=>{const el=document.querySelector('.pitch-wrapper');if(!document.fullscreenElement)el.requestFullscreen?.();else document.exitFullscreen?.()};
-by('rematch').onclick=()=>{running=false;game=null;show(by('overlay'),false);changeScreen('setup')};
+by('rematch').onclick=()=>{running=false;game=null;subHold=0;lastSubMomentId=0;show(by('sub-moment'),false);show(by('overlay'),false);changeScreen('setup')};
 by('continue').onclick=()=>{if(game?.status==='halftime'){game.resumeHalf();running=true;show(by('overlay'),false);by('pause').textContent='Ⅱ Pausar'}else if(game?.status==='finished'){by('rematch').click()}};
 for(const x of document.querySelectorAll('.tab'))x.addEventListener('click',()=>{tab=x.dataset.tab;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.tabpane').forEach(p=>show(p,p.id==='pane-'+tab));refresh(true)});
 function lineStat(title,a,b,suffix='',max=null){const total=max||Math.max(1,a+b);const f=clampNum(a/total*100);return `<div class="statsRow"><div class="statsLabel"><span>${a}${suffix}</span><small>${title}</small><span>${b}${suffix}</span></div><div class="bartrack"><div class="fillH" style="width:${f}%"></div><div class="fillA" style="width:${100-f}%"></div></div></div>`}
@@ -90,7 +106,28 @@ function refresh(force=false){if(!game)return;by('score-home').textContent=game.
  if(game.status==='halftime'){running=false;show(by('overlay'),true);by('overlay-text').innerHTML=`<strong>DESCANSO</strong><p>Ambos equipos van a cambiar de campo. Consulta los datos y reanuda cuando quieras.</p><div class="halftime-score">${game.score}</div>`;by('continue').textContent='Jugar segunda parte →'}
  if(game.status==='finished'){running=false;show(by('overlay'),true);by('overlay-text').innerHTML=`<strong>FINAL DEL PARTIDO</strong><p>${esc(game.clubs[0].name)} contra ${esc(game.clubs[1].name)}. Estadísticas reales de la simulación disponibles en la pestaña correspondiente.</p><div class="halftime-score">${game.score}</div>`;by('continue').textContent='Nueva simulación →'}
 }
-function loop(timestamp){if(!game)return;if(!lastFrame)lastFrame=timestamp;const dt=Math.min(.075,(timestamp-lastFrame)/1000);lastFrame=timestamp;if(running&&game.status==='live'){accum+=dt*speed;let steps=0;while(accum>=1/60&&steps<21){game.update(1/60);accum-=1/60;steps++;if(game.status!=='live')break}if(steps===21)accum=0;}
+function loop(timestamp){
+ if(!game)return;
+ if(!lastFrame)lastFrame=timestamp;
+ const dt=Math.min(.075,(timestamp-lastFrame)/1000);
+ lastFrame=timestamp;
+ // Freeze match time in REAL seconds, independently of 0.5× / 1× / 2× / 4×.
+ if(subHold>0){
+  subHold=Math.max(0,subHold-dt);
+  if(subHold===0)show(by('sub-moment'),false);
+ }else if(running&&game.status==='live'){
+  accum+=dt*speed;let steps=0;
+  while(accum>=1/60&&steps<21){
+   game.update(1/60);accum-=1/60;steps++;
+   const moment=game.subMoment;
+   if(moment&&moment.id!==lastSubMomentId){
+    lastSubMomentId=moment.id;subHold=2.85;accum=0;
+    showSubMoment(moment);refresh(true);break;
+   }
+   if(game.status!=='live')break;
+  }
+  if(steps===21)accum=0;
+ }
  if(!document.body.classList.contains('read-mode'))renderer.render(game);
  if(timestamp-lastUI>180||game.status!=='live'){refresh();lastUI=timestamp}
  requestAnimationFrame(loop)}

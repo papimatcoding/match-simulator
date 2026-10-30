@@ -1,6 +1,6 @@
-import {buildLineup,buildBench} from './teams.js?v=0.4.0';
-import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.4.0';
-import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.4.0';
+import {buildLineup,buildBench} from './teams.js?v=0.4.1';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.4.1';
+import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.4.1';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -14,7 +14,7 @@ export class MatchEngine{
   this.teams=[buildLineup(home,0),buildLineup(away,1)];
   for(let side=0;side<2;side++)for(const p of this.teams[side])assignRole(p,defaultRole(p,this.clubs[side]));
   this.debugAI=false;this.selectedPlayer=null;this.diagnostics=[];this.stallWatch={id:null,x:0,y:0,seconds:0};
-  this.benches=[buildBench(home,0),buildBench(away,1)];this.rosterHistory=this.teams.map((t,i)=>[...t,...this.benches[i]]);this.subsUsed=[0,0];this.subWindows=[56,68,79];
+  this.benches=[buildBench(home,0),buildBench(away,1)];this.rosterHistory=this.teams.map((t,i)=>[...t,...this.benches[i]]);this.subsUsed=[0,0];this.subWindows=[56,68,79];this.subMoment=null;this.subMomentSerial=0;
   this.stats=[STATS(),STATS()];this.events=[];this.goals=[];
   this.ball={x:52.5,y:34,owner:null,flight:null};this.attackPasses=0;
   this.time=0;this.realTime=0;this.half=1;this.status='preview';this.phase='kickoff';
@@ -112,6 +112,7 @@ export class MatchEngine{
  }
  makeSubsAtStoppage(){
   if(this.time<56*60||this.time>=90*60)return;
+  const changes=[];
   for(let side=0;side<2;side++){
    if(this.subsUsed[side]>=3||this.time/60<this.subWindows[this.subsUsed[side]])continue;
    const team=this.teams[side],bench=this.benches[side];
@@ -124,9 +125,13 @@ export class MatchEngine{
    const incoming=bench.splice(j,1)[0],slot=team.indexOf(outgoing);
    Object.assign(incoming,{i:outgoing.i,anchor:{...outgoing.anchor},x:outgoing.x,y:outgoing.y,fx:outgoing.fx,fy:outgoing.fy,side,subOn:true,energy:1,red:false});
    assignRole(incoming,defaultRole(incoming,this.clubs[side]));team[slot]=incoming;this.subsUsed[side]++;this.stats[side].substitutions++;
-   this.add('substitution',side,`Cambio en ${this.clubs[side].name}: entra ${incoming.name} (#${incoming.number}) por ${outgoing.name} (#${outgoing.number}).`,incoming,{in:incoming.name,out:outgoing.name});
+   this.add('substitution',side,`Cambio en ${this.clubs[side].name}: entra ${incoming.name} (#${incoming.number}) por ${outgoing.name} (#${outgoing.number}).`,
+    incoming,{in:incoming.name,out:outgoing.name,inNumber:incoming.number,outNumber:outgoing.number});
+   changes.push({side,team:this.clubs[side].name,color:this.clubs[side].color,
+      in:{name:incoming.name,number:incoming.number},out:{name:outgoing.name,number:outgoing.number}});
    this.restart.kickerId=this.selectKicker(this.restart)?.id;
   }
+  if(changes.length)this.subMoment={id:++this.subMomentSerial,minute:Math.ceil(this.time/60),changes};
  }
  movePlayers(dt){
   const owner=this.ball.owner, bx=this.ball.x,by=this.ball.y;

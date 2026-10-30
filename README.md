@@ -1,4 +1,5 @@
-# MatchLab 0.4 · Roles individuales y decisiones sin bloqueos
+# MatchLab 0.4.1 — Plantillas contrastadas y cambios visuales
+
 
 
 
@@ -95,3 +96,14 @@ Corrección de estancamientos: el poseedor elige alternativa segura cuando no en
 Córners y cabezazos utilizan perfiles de posición y habilidad aérea estimada. Se mantienen el motor físico de trayectorias, estadísticas derivadas y modos tácticos 0.3. Las pruebas automáticas controlan continuidad, decisiones y diferencias de roles.
 
 Se trata de heurísticas individuales y colectivas experimentales, no un simulador de aprendizaje automático ni una representación completa de todos los reglamentos.
+
+## Parche 0.4.1 (30 de octubre de 2026)
+
+- Auditoría automática de nombres de los 33 clubes sobre onces y banquillos: **0 duplicidades entre clubes**; evita que un fichaje permanezca como suplente del club de origen. Revisión dirigida a FC Barcelona, PSG, Liverpool, Chelsea, Dortmund y Elche, basada en fuentes oficiales de 2026/27.
+- Ferran Torres solo en PSG; Ronald Araujo y Bradley Barcola solo en Liverpool; Enzo Fernandez solo en Manchester City; Karim Adeyemi solo en FC Barcelona. Ciertos banquillos se mantienen ilustrativos, no corresponden necesariamente a una convocatoria real de una jornada.
+- Sustituciones: cuando el motor realiza un cambio durante una interrupción aparece un panel de entrada y salida, club, dorsales y minuto; el reloj y la acción se congelan **2,85 segundos reales**, independientemente de la velocidad 0,5×–4×. Si ambos equipos cambian en la misma interrupción se muestran juntos. Tras la presentación continúa la misma jugada. Los cambios siguen modificando los jugadores activos y las estadísticas.
+- La validación CI incluye una prueba automática de consistencia de propiedad de jugadores y de la presencia del panel visual.
+
+Fuentes de plantillas: [Barça 2026/27](https://www.fcbarcelona.com/en/football/first-team/news/4570894/202627-first-team-jersey-numbers-confirmed), [PSG 2026/27](https://www.psg.fr/en/mens-football/squad/season/2026-2027), [Liverpool 2026/27](https://www.liverpoolfc.com/news/liverpool-submit-premier-league-squad-list-2026-27), [Chelsea](https://www.chelseafc.com/en/teams/mens-profiles), [BVB](https://www.bvb.de/de/en/teams/football/first-team.html), [Elche](https://www.elchecf.es/noticias/el-elche-cf-presenta-a-sus-cuatro-ultimas-incorporaciones).
+
+Quedan por verificar exhaustivamente los nombres y dorsales de los 33 onces y banquillos; las plantillas son recortes manuales, no sincronización en directo con una API deportiva.
