@@ -1,4 +1,5 @@
-import {buildLineup,buildBench} from './teams.js?v=0.2.4';
+import {buildLineup,buildBench} from './teams.js?v=0.3.0';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.3.0';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -6,9 +7,9 @@ const rndFactory=seed=>{let s=(seed>>>0)||1;return()=>((s^=s<<13,s^=s>>>17,s^=s<
 const STATS=()=>({goals:0,shots:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,fouls:0,corners:0,offsides:0,yellows:0,reds:0,saves:0,throwIns:0,substitutions:0,freeKicks:0,possSeconds:0});
 const safeName=p=>p?.name||'un futbolista';
 export class MatchEngine{
- constructor(home,away,seed=20261029){
+ constructor(home,away,seed=20261029,options={}){
   if(home.id===away.id)throw Error('Los equipos deben ser diferentes');
-  this.clubs=[home,away];this.rng=rndFactory(seed);this.seed=seed;
+  this.clubs=[home,away];this.rng=rndFactory(seed);this.seed=seed;this.tactics=[options.tactics?.[0]||defaultTactic(home),options.tactics?.[1]||defaultTactic(away)].map(k=>TACTICS[k]?k:'equilibrada');
   this.teams=[buildLineup(home,0),buildLineup(away,1)];
   this.benches=[buildBench(home,0),buildBench(away,1)];this.rosterHistory=this.teams.map((t,i)=>[...t,...this.benches[i]]);this.subsUsed=[0,0];this.subWindows=[56,68,79];
   this.stats=[STATS(),STATS()];this.events=[];this.goals=[];
@@ -19,6 +20,8 @@ export class MatchEngine{
   this.reposition(0,true);
  }
  random(a,b){return a+(b-a)*this.rng()}
+  tactic(side){return tacticalState(this.tactics[side],this.time/60,this.stats[side].goals-this.stats[1-side].goals)}
+  setTactic(side,key){if(![0,1].includes(side)||!TACTICS[key])return false;this.tactics[side]=key;this.add('tactic',side,`${this.clubs[side].name} cambia a ${TACTICS[key].label.toLowerCase()}.`);return true}
  direction(side){return (side===0?1:-1)*(this.half===1?1:-1)}
  goalX(side){return this.direction(side)===1?105:0}
  ownGoalX(side){return this.direction(side)===1?0:105}
@@ -39,7 +42,7 @@ export class MatchEngine{
  isActive(p){return !p.red}
  nearest(side,x,y,filter=()=>true){let best=null,d=1e9;for(const p of this.teams[side])if(!p.red&&filter(p)){const v=hypot(p.x-x,p.y-y);if(v<d){best=p;d=v}}return best}
  keeper(side){return this.teams[side][0]}
- hold(p){this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.phase='posesion';this.decision=this.random(.40,.88);this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null}
+ hold(p){this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.phase='posesion';this.decision=this.random(.40,.88)/this.tactic(p.side).tempo;this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null}
  ballFree(){this.ball.owner=null;this.carrier=null}
  kickoff(side){this.lastPass=null;this.restartAt('kickoff',side,{x:52.5,y:34},1.15)}
  restartAt(type,side,spot,wait=1.8){
@@ -120,10 +123,10 @@ export class MatchEngine{
    if(side===B)continue;
    const sorted=this.teams[side].filter(p=>p.i!==0&&!p.red)
     .map(p=>({p,d:hypot(p.x-bx,p.y-by)})).sort((a,b)=>a.d-b.d);
-   closest[side]=sorted.slice(0,2).map(z=>z.p);
+   closest[side]=sorted.slice(0,this.tactic(side).press>=1.02?2:1).map(z=>z.p);
   }
   for(let side=0;side<2;side++){
-   const dir=this.direction(side),team=this.teams[side],attacking=side===B;
+   const dir=this.direction(side),team=this.teams[side],attacking=side===B,tactic=this.tactic(side);
    const pressers=closest[side]||[];
    const defenders=this.teams[1-side].filter(p=>!p.red);
    const defenderLine=defenders.map(p=>p.x*dir).sort((a,b)=>b-a)[1]||95;
@@ -137,8 +140,8 @@ export class MatchEngine{
     else if(this.ball.flight?.type==='pass'&&this.ball.flight.to===p){target={...this.ball.flight.end}}
     else{
      const anchor=this.localToWorld(side,p.anchor.x,p.anchor.y);
-     const ballShift=clamp((bx-52.5)*dir*.26,-13,14);
-     target={x:anchor.x+dir*ballShift,y:clamp(anchor.y+(by-34)*.16,4,64)};
+     const ballShift=clamp((bx-52.5)*dir*.26*tactic.depth,-13,15)+(tactic.depth-1)*7;
+     target={x:anchor.x+dir*ballShift,y:clamp(34+(anchor.y-34)*tactic.width+(by-34)*.16,4,64)};
      const nearby=hypot(p.x-bx,p.y-by);
      if(attacking){
       const lane=Math.sign(anchor.y-34)||((p.i%2)*2-1);
@@ -152,23 +155,42 @@ export class MatchEngine{
       if(isForward){
        const nearGoal=(this.goalX(side)-bx)*dir;
        const runClock=Math.sin(this.realTime*1.15+p.i*1.73);
-       const run=nearGoal>18&&nearby<37&&runClock>-.45;
-       target.x+=dir*(run?7.5:1.5);
+       const run=nearGoal>14&&nearby<40&&runClock>-(.20+.25*tactic.runs);
+       target.x+=dir*(run?7.5*tactic.runs:1.5);
        if(run&&!isWinger)target.y=clamp(target.y+lane*(2.5+(p.i%3)*2),5,63);
        // Controlled timing: forwards hold just ONSIDE until a pass is played.
        if(run&&target.x*dir>defenderLine-.9)target.x=dir*(defenderLine-.9);
       }
-      if(isMid&&nearby<25&&p!==owner){
+      if(isMid&&nearby<25&&p!==owner&&!(p.role==='AM'&&nearby>13&&nearby<22)){
        // Support triangles: midfielders offer a passing angle, not the same spot.
        target.x=clamp(bx-dir*(4+(p.i%3)*2),3,102);
        target.y=clamp(by+lane*(9+(p.i%2)*3),4,64);
+      }
+      // Midfielders make late runs and the far winger attacks the back post.
+      const inFinalThird=(this.goalX(side)-bx)*dir<34;
+      if(inFinalThird&&p!==owner&&['CM','AM'].includes(p.role)&&p.i!==5){
+       const wave=Math.sin(this.realTime*.83+p.i*1.41);
+       if(wave>-.38&&nearby<43){
+        target.x=clamp(bx+dir*(5+5*tactic.runs),3,102);
+        target.y=clamp(34+(p.i%2?1:-1)*(8+(p.i%3)*2),7,61);
+        if(target.x*dir>defenderLine-.75)target.x=dir*(defenderLine-.75);
+       }
+      }
+      if(inFinalThird&&isWinger&&p.role!=='RWB'&&p.role!=='LWB'&&Math.abs(anchor.y-by)>18){
+       target.y=clamp(anchor.y+(34-anchor.y)*.43,7,61);target.x+=dir*5*tactic.runs;
       }
      }else{
       if(p===pressers[0])target={x:bx-dir*2.4,y:by+(p.i%2?1:-1)*.8};
       else if(p===pressers[1])target={x:bx-dir*5.5,y:by+(p.i%2?1:-1)*5.5};
       else{
        // Defenders remain on the goal side and protect their assigned lanes.
-       if(['CB','LB','RB','RWB','LWB'].includes(p.role))target.x=clamp(target.x-dir*2,3,102);
+       if(['CB','LB','RB','RWB','LWB'].includes(p.role))target.x=clamp(target.x-dir*(2+(1-tactic.depth)*5),3,102);
+       if(p.role==='CB'&&p.i===2){
+        const striker=this.teams[1-side].find(q=>q.role==='ST'&&!q.red);
+        if(striker&&hypot(striker.x-bx,striker.y-by)<42&&(striker.x-this.ownGoalX(side))*dir<54){
+         target.x=clamp(striker.x-dir*2.5,3,102);target.y=clamp(striker.y+2,4,64);
+        }
+       }
       }
      }
     }
@@ -177,7 +199,7 @@ export class MatchEngine{
      for(const q of [...this.teams[0],...this.teams[1]]){
       if(q===p||q.red)continue;
       const isPresser=pressers.includes(p);
-      const sep=p.side===q.side?4.5:isPresser?1.9:3.5;
+      const sep=p.side===q.side?4.5*tactic.spacing:isPresser?1.9:3.2;
       const dx=target.x-q.x,dy=target.y-q.y;
       const d=hypot(dx,dy);
       if(d<sep){const nx=d>.01?dx/d:Math.cos(p.i*3+q.i),ny=d>.01?dy/d:Math.sin(p.i*3+q.i);
@@ -190,9 +212,9 @@ export class MatchEngine{
     }
     p.fx=clamp(target.x,2,103);p.fy=clamp(target.y,2,66);
     p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
-    const pressureStyle=this.clubs[side].style==='presion'?1.14:1;
+    const pressureStyle=tactic.press;
     const delta=hypot(p.fx-p.x,p.fy-p.y);
-    const speed=p.i===0?2.5:(p===owner?3.5:pressers[0]===p?6.0*pressureStyle:pressers[1]===p?5.7:5.15)*(.75+p.skills.pace/300)*(.75+.25*p.energy);
+    const speed=p.i===0?2.5:(p===owner?3.5:pressers[0]===p?6.0*pressureStyle:pressers[1]===p?5.7*pressureStyle:5.15)*(.75+p.skills.pace/300)*(.75+.25*p.energy);
     if(delta>.01){const step=Math.min(delta,speed*dt);p.x+=step*(p.fx-p.x)/delta;p.y+=step*(p.fy-p.y)/delta}
    }
   }
@@ -275,7 +297,9 @@ export class MatchEngine{
   }
   if(r.type==='corner'){
    this.ball.owner=null;const options=this.teams[side].filter(p=>p.i>0&&p!==k&&!p.red&&['ST','CB','AM','CM'].includes(p.role));
-   const receiver=options.sort((a,b)=>hypot(a.x-this.goalX(side),a.y-34)-hypot(b.x-this.goalX(side),b.y-34))[0];
+   const candidates=options.map(p=>({p,near:hypot(p.x-this.goalX(side),p.y-34),def:this.nearest(1-side,p.x,p.y,z=>z.i!==0)}))
+      .map(z=>({...z,score:40-z.near*.8+z.p.skills.shot*.18+(z.p.role==='CB'?2:0)+(z.def?Math.min(8,dist(z.p,z.def))*1.6:0)+this.random(-8,8)})).sort((a,b)=>b.score-a.score);
+    const receiver=candidates[0]?.p;
    if(receiver){this.pass(k,receiver,true);this.pendingCornerHeader=receiver.id;}return;
   }
   if(r.type==='throwIn'){const receiver=this.teams[side].filter(p=>p.i!==0&&p!==k&&!p.red).sort((a,b)=>hypot(a.x-r.spot.x,a.y-r.spot.y)-hypot(b.x-r.spot.x,b.y-r.spot.y))[0];if(receiver)this.pass(k,receiver,true);else this.hold(k);return}
@@ -334,13 +358,13 @@ export class MatchEngine{
   if(press<3&&this.rng()<.065){this.foul(p,nearest);return}
   if(press<2.5&&this.rng()<.12){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
   // A clear carrier may advance before making another choice.
-  if((quality.distance>36&&press>5&&this.rng()<.18)||(press>7&&this.rng()<.12)){this.decision=this.random(.38,.70);return}
+  if((quality.distance>36&&press>5&&this.rng()<.18)||(press>7&&this.rng()<.12)){this.decision=this.random(.38,.70)/this.tactic(side).tempo;return}
   const receiver=this.findReceiver(p);
   if(receiver){this.pass(p,receiver);return}
-  this.decision=.43;
+  this.decision=.43/this.tactic(side).tempo;
  }
  findReceiver(p){
-  const side=p.side,dir=this.direction(side),style=this.clubs[side].style;
+  const side=p.side,dir=this.direction(side),style=this.tactics[side],tactic=this.tactic(side);
   const options=this.teams[side].filter(q=>q!==p&&q.i!==0&&!q.red&&dist(q,p)>5&&dist(q,p)<43);
   if(!options.length)return null;
   const rated=options.map(q=>{
@@ -354,13 +378,17 @@ export class MatchEngine{
     lane=Math.min(lane,hypot(z.x-(p.x+vx*t),z.y-(p.y+vy*t)));
    }
    const isOff=this.isOffside(p,q);
-   const risky=d>30?Math.pow((d-30)/12,1.4)*5:0;
+   const risky=d>30?Math.pow((d-30)/12,1.4)*(style==='tiki_taka'?11:5):0;
    const inTraffic=free<3?22:free<5?11:0;
    const blindLane=lane<2.5?30:lane<4?13:0;
    // Possession prefers clean short angles; vertical sides can play into space.
-   const score=(progress>=0?progress*(style==='vertical'?.88:style==='posesion'?.67:.77)+3:progress*.37)+
+   const attackZone=Math.abs(this.goalX(side)-q.x)<25;
+    const roleChance=attackZone?(q.role==='ST'?-7:['LW','RW','AM','CM'].includes(q.role)?7:0):0;
+    const attackingWindow=attackZone&&free>3.4?Math.min(6,(q.skills.shot-70)*.45):0;
+    const score=(progress>=0?progress*(style==='ofensiva'?.96:style==='tiki_taka'?.55:style==='defensiva'?.73:.78)+3:progress*.37)+roleChance+attackingWindow+
     Math.min(free,12)*.79+Math.min(lane,11)*1.08-
-    d*(style==='posesion'?.21:.18)-inTraffic-blindLane-risky-
+    d*(style==='tiki_taka'?.38:style==='defensiva'?.27:.16)-inTraffic-blindLane-risky-
+     (style==='tiki_taka'&&d>20?(d-20)*.9:0)-
     (progress< -10?5:0)-(isOff?90:0)+this.random(-2,2);
    return {q,score};
   }).sort((a,b)=>b.score-a.score);
@@ -403,9 +431,10 @@ export class MatchEngine{
   const quality=this.shotQuality(from);
   const keeperRating=this.keeper(1-side).rating;
   const keeperMod=clamp(1+(80-keeperRating)*.005,.86,1.13);
-  const xg=penalty?.76:freeKick?clamp(quality.xg*.66,.018,.18):header?clamp(quality.xg*.78,.012,.34):clamp(quality.xg*keeperMod,.004,.65);
+  const xg=penalty?.76:freeKick?clamp(quality.xg*.66,.018,.18):header?clamp(quality.xg*.90+(d<17?.055:0),.02,.34):clamp(quality.xg*keeperMod,.004,.65);
   this.stats[side].shots++;this.stats[side].xg+=xg;
-  const onTarget=this.rng()<(penalty?.91:clamp(.77-(d>24?.13:0)-quality.blockers*.045+(from.skills.shot-83)*.005,.38,.92));
+  const onTarget=this.rng()<(penalty?.91:header?clamp(.61+(from.rating-75)*.007-quality.blockers*.028,.45,.83):
+     clamp(.77-(d>24?.13:0)-quality.blockers*.045+(from.skills.shot-83)*.005,.38,.92));
   const goalChance=onTarget&&(this.rng()<clamp(xg/Math.max(.2,penalty?.91:1.04),0,.94));
   const targetY=onTarget?this.random(31.2,36.8):(this.rng()<.5?this.random(25,29.3):this.random(38.7,43));
   const assist=!penalty&&!freeKick&&this.lastPass?.side===side&&this.lastPass?.to===from.id&&this.time-this.lastPass.time<150?this.lastPass.from:null;

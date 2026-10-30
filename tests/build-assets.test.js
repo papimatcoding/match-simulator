@@ -4,12 +4,12 @@ import {readFileSync} from 'node:fs';
 import {TEAMS,buildLineup,RATINGS_REVISION} from '../src/teams.js';
 const file = path => readFileSync(new URL(path,import.meta.url),'utf8');
 test('published module graph busts cached ratings from prior builds', () => {
- const version = '0.2.4';
+ const version = '0.3.0';
  assert.equal(RATINGS_REVISION,version);
- assert.match(file('../index.html'), /src\/app\.js\?v=0\.2\.4/);
- assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.2\.4/);
- assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.2\.4/);
- assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.2\.4/);
+ assert.match(file('../index.html'), /src\/app\.js\?v=0\.3\.0/);
+ assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.3\.0/);
+ assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.3\.0/);
+ assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.3\.0/);
  assert.match(file('../index.html'), /id="ratings-revision"/);
 });
 test('lineup screen data uses footballer-specific values, not team OVR or shirt',()=>{
@@ -32,4 +32,11 @@ test('LaLiga completa y escalones de calidad para pruebas',()=>{
   assert.ok(eleven.every(p=>p.rating>=65&&p.rating<=95),t.id);
  }
  assert.ok(TEAMS.find(t=>t.id==='barca').rating>TEAMS.find(t=>t.id==='malaga').rating+12);
+});
+
+test('tactical presets are imported as a versioned module',()=>{
+ assert.match(file('../src/app.js'),/tactics\\.js\\?v=0\\.3\\.0/);
+ assert.match(file('../src/engine.js'),/tactics\\.js\\?v=0\\.3\\.0/);
+ assert.match(file('../index.html'),/id="tactic-home"/);
+ assert.match(file('../index.html'),/id="live-tactic-home"/);
 });
