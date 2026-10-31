@@ -100,7 +100,11 @@ export function roleTarget(g,p,base,ball,attacking,owner){
   if(p!==owner&&['extremo','extremo_interior','delantero_avanzado','delantero_presion','box_to_box','mediapunta'].includes(key)){
    const defenders=g.teams[1-p.side].filter(q=>!q.red).map(q=>q.x*dir).sort((a,b)=>b-a);
    const line=defenders[1];
-   if(line!==undefined&&x*dir>line-.8 && x*dir>52.5)x=dir*(line-.8);
+   if(line!==undefined&&x*dir>52.5){
+    const wave=Math.sin(g.realTime*1.1+p.i*1.7);
+    const lead=Math.min(3.3,Math.max(0,wave-.15)*4.2*tactic.runs);
+    if(x*dir>line-.8+lead)x=dir*(line-.8+lead);
+   }
   }
   // Keep the ball carrier in full control: instructions do not teleport them.
   if(p===owner)return {...base,intent:'Elegir acción con balón'};

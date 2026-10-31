@@ -1,4 +1,4 @@
-# MatchLab 0.5.1 — Transiciones colectivas en 2D
+# MatchLab 0.5.3 — Anticipación, control orientado y auditoría espacial
 
 
 
@@ -139,9 +139,19 @@ Las reglas de decisión de MatchLab son aproximaciones futbolísticas propias, n
 - Las jugadas a balón parado reinician el estado colectivo. Los ratings siguen siendo revisión 0.5.0, sin cambios de atributos.
 - Próximos pasos: lectura predictiva de líneas de pase, coberturas y calibración con partidos reales. El motor es heurístico y no reproduce código propietario de EA.
 
-## 0.5.2 — Recepciones reales, errores de pase e intercepciones espaciales
+## 0.5.3 — Recepciones reales, errores de pase e intercepciones espaciales
 - El balón ya no se desvía automáticamente hacia un rival escogido por sorteo: solo puede interceptarlo un jugador que alcance su trayectoria real, incluida la llegada.
 - El error de pase depende de distancia, técnica y presión; las trayectorias se recortan al cruzar una línea real del campo. Un pase no se cuenta como completado hasta que el receptor controla físicamente la pelota. Los controles difíciles pueden dejar balones divididos.
 - La presión alta ya no aumenta la velocidad de carrera sin límite: máximo 6,7 m/s para futbolistas de campo. Se refuerza moderadamente el riesgo de robo a un portador acosado.
-- **Auditoría reproducible:** `npm run audit` simula 60 partidos completos (12 por cada plan táctico), registra más de 25 indicadores por plan y valida invariantes. El despliegue ejecuta pruebas y auditoría antes de publicar. Resultados y límites: [Auditoría 0.5.2](docs/AUDIT-052.md).
+- **Auditoría reproducible:** `npm run audit` simula 60 partidos completos (12 por cada plan táctico), registra más de 25 indicadores por plan y valida invariantes. El despliegue ejecuta pruebas y auditoría antes de publicar. Resultados y límites: [Auditoría 0.5.3](docs/AUDIT-052.md).
 - **Limitaciones que siguen abiertas:** fueras de juego y saques de banda demasiado escasos; pocas recuperaciones reales tras presión; ritmo bajo de pases; xG aún poco calibrado. No presentar esta versión como motor realista acabado.
+
+## 0.5.3 — Parche de inteligencia espacial y controles imperfectos
+
+- **Anticipación defensiva**: hasta dos coberturas de líneas de pase (tres en presión alta), asignadas según posiciones reales y amenazas. En vuelo, un defensor solo busca un punto de corte si todavía puede llegar a tiempo con su velocidad máxima; no hay teletransporte.
+- **Controles fallidos y balón dividido**: un control defectuoso puede dejar el balón rodando, perder velocidad por fricción y salir del campo por una línea que realmente cruza. Se concede el saque al equipo contrario al último toque. El receptor que falla no puede recuperar el balón instantáneamente en el siguiente fotograma.
+- **Desmarques y fuera de juego**: los delanteros pueden medir mal la línea durante una ruptura. El pasador tolera errores marginales de lectura, pero no elige grandes posiciones adelantadas.
+- **Calibración del remate**: la probabilidad de gol condicionada a que el disparo vaya a puerta se calcula como xG / probabilidad de ir a puerta, evitando multiplicar por la precisión dos veces. Es una corrección matemática, no una calibración externa con datos profesionales.
+- **Auditoría ampliada**: `npm run audit` informa de acierto de pases por longitud y presión, goles observados y esperados por intervalo de xG, recuperaciones por tipo, salidas reales de balón dividido y saques del rival. `tests/ball-053.test.js` cubre las nuevas reglas.
+
+**Limitaciones:** las intercepciones siguen siendo escasas, los fueras de juego y saques de banda aún ocurren con frecuencia muy inferior a un partido real, y la velocidad del reloj no está calibrada con el ritmo real de pases. Los indicadores no demuestran realismo global. Ver [Auditoría 0.5.3](docs/AUDIT-053.md).
