@@ -78,7 +78,7 @@ test('technical schema validates estimated real profiles and custom fictional he
  assert.throws(()=>technicalProfile(p,{curve:NaN}),/Invalid technical/);
 });
 test('skilled winger has a visible curved shot, exact endpoints, no teleportation',()=>{
- const g=game(),p=g.teams[0][10];p.x=76;p.y=14;
+ const g=game(),p=g.teams[0][10];p.x=81;p.y=20;
  p.technical={...p.technical,curve:98,technique:97,composure:90,preferredFoot:'left',origin:'custom'};
  const quality=g.shotQuality(p);
  const selected=chooseShot(g,p,quality);
