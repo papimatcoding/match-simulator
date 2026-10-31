@@ -8,7 +8,7 @@ const styles=['presion','defensiva','equilibrada','tiki_taka','ofensiva'];
 const round=(x,n=1)=>+x.toFixed(n);
 const result={version:'0.5.7',seedFormula:'seed*157',clubs:['barca','getafe'],gamesPerTactic:12,tactics:{}};
 for(const tactic of styles){
- const s={passByLength:Object.fromEntries(['short','medium','long'].map(k=>[k,{attempted:0,completed:0}])),passByPressure:Object.fromEntries(['tight','moderate','free'].map(k=>[k,{attempted:0,completed:0}])),xgBins:Object.fromEntries(['low','medium','high'].map(k=>[k,{shots:0,xg:0,goals:0}])),offsideFlags:0,awayThrows:0,awayOffsides:0,looseExits:0,flightInterceptions:0,groundTackles:0,groundTurnovers:0,duelWins:0,contestedWins:0,duelEvents:0,duelParticipants:0,maxDuelContact:0,secondBallSamples:0,secondBallChasers:0,realSeconds:0,subsHome:0,subsAway:0,windowsHome:0,windowsAway:0,games:0,shots:0,goals:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,regains:0,quick:0,loose:0,offsides:0,corners:0,throwIns:0,passExits:0,fouls:0,saves:0,patterns:0,patternsCompleted:0,patternAborts:{lost:0,blocked:0,timeout:0,restart:0,reception:0},finalThirdPassAttempts:0,finalThirdPassCompleted:0,shotsAfterPass:0,passLength:0,progressive:0,backward:0,short:0,passAttempts:0,orientedControls:0,attackingSamples:0,spaceRunSamples:0,maxIdle:0,possession:0,timePhases:{restart:0,flight:0,loose:0,possessed:0,free:0},shapeSamples:0,crowdedPairs:0,defensiveWidth:0,defensiveSamples:0,unphysicalPlayers:0,magneticPasses:0,illegalCompletions:0,finished:0};
+ const s={passByLength:Object.fromEntries(['short','medium','long'].map(k=>[k,{attempted:0,completed:0}])),passByPressure:Object.fromEntries(['tight','moderate','free'].map(k=>[k,{attempted:0,completed:0}])),xgBins:Object.fromEntries(['low','medium','high'].map(k=>[k,{shots:0,xg:0,goals:0}])),offsideFlags:0,awayThrows:0,awayOffsides:0,looseExits:0,flightInterceptions:0,groundTackles:0,groundTurnovers:0,duelWins:0,contestedWins:0,duelEvents:0,duelParticipants:0,maxDuelContact:0,secondBallSamples:0,secondBallChasers:0,realSeconds:0,subsHome:0,subsAway:0,windowsHome:0,windowsAway:0,games:0,shots:0,goals:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,regains:0,quick:0,loose:0,offsides:0,corners:0,throwIns:0,passExits:0,fouls:0,saves:0,patterns:0,patternsCompleted:0,patternAborts:{lost:0,blocked:0,timeout:0,restart:0,reception:0},finalThirdPassAttempts:0,finalThirdPassCompleted:0,shotsAfterPass:0,passLength:0,progressive:0,backward:0,short:0,passAttempts:0,orientedControls:0,attackingSamples:0,spaceRunSamples:0,maxIdle:0,possession:0,timePhases:{restart:0,flight:0,loose:0,possessed:0,free:0},shapeSamples:0,crowdedPairs:0,defensiveWidth:0,defensiveSamples:0,unphysicalPlayers:0,magneticPasses:0,illegalCompletions:0,finished:0,advOffered:0,advPlayed:0,advCalledBack:0,curlShots:0,powerShots:0,coverSamples:0,coverAssignments:0,midpointShots:0,nonlinearShots:0};
  for(let seed=1;seed<=12;seed++){
   const g=new MatchEngine(club('barca'),club('getafe'),seed*157,{tactics:[tactic,'equilibrada']});
   const pass=g.pass.bind(g);
@@ -67,6 +67,10 @@ for(const tactic of styles){
    s.maxIdle=Math.max(s.maxIdle,idle);
    if(g.teams.flat().some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>105||p.y<0||p.y>68))s.unphysicalPlayers++;
    if(tick%13===0&&!g.restart){
+    if(g.ball.owner?.side===1){
+     s.coverSamples++;
+     s.coverAssignments+=g.defensiveScreensLastTick||0;
+    }
     s.shapeSamples++;
     if(g.ball.owner?.side===0){
      s.attackingSamples++;
@@ -90,6 +94,11 @@ for(const tactic of styles){
    assert.ok(g.subWindowsUsed[side]<=3,'more than three windows');
    assert.equal(g.subsUsed[side],g.stats[side].substitutions);}
   s.games++;for(const key of ['shots','goals','onTarget','xg','passes','completed','interceptions','offsides','corners','throwIns','fouls','saves'])s[key]+=a[key];
+  assert.equal(a.advantagesOffered,a.advantagesPlayed+a.advantagesCalledBack,
+   'unclosed advantages '+tactic+' seed '+seed);
+  s.advOffered+=a.advantagesOffered;s.advPlayed+=a.advantagesPlayed;
+  s.advCalledBack+=a.advantagesCalledBack;
+  s.curlShots+=a.curlShots;s.powerShots+=a.powerShots;
   s.orientedControls+=a.orientedControls;
   s.duelWins+=a.looseRecoveries;s.contestedWins+=a.contestedRecoveries;
   const duels=g.events.filter(e=>e.type==='duel'&&e.side===0);
@@ -110,7 +119,14 @@ for(const tactic of styles){
   s.groundTurnovers+=g.events.filter(e=>e.type==='turnover'&&e.side===0).length;
  }
  result.tactics[tactic]={
-  matches:s.games,visualMinutesPerHalf:round(s.realSeconds/s.games/120,2),
+  matches:s.games,
+  advantagesOfferedPerMatch:round(s.advOffered/s.games,2),
+  advantagesPlayedPerMatch:round(s.advPlayed/s.games,2),
+  advantagesCalledBackPerMatch:round(s.advCalledBack/s.games,2),
+  curlShotsPerMatch:round(s.curlShots/s.games,2),
+  powerShotsPerMatch:round(s.powerShots/s.games,2),
+  defensiveScreensWhenOpponentHasBall:round(s.coverAssignments/Math.max(1,s.coverSamples),2),
+  visualMinutesPerHalf:round(s.realSeconds/s.games/120,2),
   substitutionsPerMatch:{home:round(s.subsHome/s.games),away:round(s.subsAway/s.games)},
   inPlayWindowsPerMatch:{home:round(s.windowsHome/s.games,2),away:round(s.windowsAway/s.games,2)},
   looseBallRecoveriesPerMatch:round(s.duelWins/s.games),
@@ -167,5 +183,5 @@ for(const tactic of styles){
  assert.ok(s.completed/s.passes>.65&&s.completed/s.passes<.95,'pass success outside audit band '+tactic);
  assert.ok(s.loose>0,'no loose balls '+tactic);
 }
-console.log('MATCHLAB COORDINATED DUEL + TEMPO AUDIT 0.5.7: 60 complete seeded matches, spatial and xG-calibration metrics by tactic');
+console.log('MATCHLAB REFEREE + CURL + DEFENSE AUDIT 0.5.7: 60 complete seeded matches, spatial and xG-calibration metrics by tactic');
 console.log(JSON.stringify(result,null,2));
