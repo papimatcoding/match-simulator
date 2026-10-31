@@ -697,7 +697,9 @@ export class MatchEngine{
   const end=outcome==='save'?{x:goal-dir*(2.0+this.random(0,1.4)),y:saveY}:{x:goal+dir*.7,y:targetY};
   this.ballFree();this.ball.flight={type:'shot',side,from,start,end,t:0,duration:clamp(d/47,.28,.88),goalChance,onTarget,xg,penalty,freeKick,header,assist,outcome,keeper,...shot};
   this.phase=penalty?'penalti':freeKick?'falta directa':'disparo';
-  this.add('shot',side,penalty?`${from.name} lanza el penalti.`:freeKick?`${from.name} ejecuta la falta directa.`:`${from.name} ${header?'cabecea':'remata'} a portería.`,from,{xg,shotStyle:shot.style,curve:shot.curve});
+  this.add('shot',side,penalty?`${from.name} lanza el penalti.`:freeKick?`${from.name} ejecuta la falta directa.`:
+   `${from.name} ${header?'cabecea':shot.style==='curl'?'busca la escuadra con rosca':shot.style==='power'?'arma un disparo potente':'remata'}.`,
+   from,{xg,shotStyle:shot.style,curve:shot.curve});
  }
  clearance(by,lastSide){
   const start={x:this.ball.x,y:this.ball.y};const edge=start.y<34?-1:69;
