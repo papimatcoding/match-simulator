@@ -1,4 +1,4 @@
-# MatchLab 0.5.6 — Ritmo de partido, duelos colectivos y decisiones de entrenador
+# MatchLab 0.5.7 — Ventaja, coberturas e inteligencia de tiro
 
 
 
@@ -177,7 +177,7 @@ No se mezcla con el simulador de carrera FUERA DE GUIÓN. Las mejoras son experi
 
 Ver [auditoría 0.5.5](docs/AUDIT-055.md).
 
-## MatchLab 0.5.6 — Ritmo táctico y disputas colectivas
+## MatchLab 0.5.7 — Ritmo táctico y disputas colectivas
 
 **Duración de referencia:** 45 minutos simulados por cada 200 segundos de juego visible: aproximadamente **3 minutos y 20 segundos por parte a 1×**, sin contar la pausa manual del descanso, el tiempo añadido ni las tarjetas de sustitución. El botón de velocidad sigue siendo una opción de visualización, no una regla táctica.
 
@@ -191,4 +191,4 @@ Ver [auditoría 0.5.5](docs/AUDIT-055.md).
 
 **Límites:** el banquillo actual sigue siendo un ejemplo editorial reducido; no se han implementado lesiones ni todos los protocolos arbitrales, ni un conjunto de estadísticas real de jugadores. Los tiros con rosca y la base de datos individual están previstos como sistemas posteriores. MatchLab sigue separado de FUERA DE GUIÓN.
 
-Ver [auditoría 0.5.6](docs/AUDIT-056.md).
+Ver [auditoría 0.5.7](docs/AUDIT-056.md).
