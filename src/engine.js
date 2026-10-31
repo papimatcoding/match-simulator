@@ -174,14 +174,12 @@ export class MatchEngine{
   if(this.ball.owner)this.stats[this.ball.owner.side].possSeconds+=dt;
   else if(this.ball.flight)this.stats[this.ball.flight.side].possSeconds+=dt*.8;
   this.checkAdvantage();
-  if(this.restart)return;
   if(this.combo&&!combinationValid(this,this.combo))this.abortCombo(this.realTime>this.combo.expiry?'timeout':'lost');
   this.movePlayers(dt);
   if(this.restart){this.restart.wait-=dt;if(this.restart.wait<=0)this.executeRestart();return}
   if(this.ball.flight){this.updateFlight(dt);return}
    if(this.ball.loose&&this.advanceLoose(dt))return;
   this.checkAdvantage();
-  if(this.restart)return;
   if(this.ball.owner){const p=this.ball.owner;this.ball.x=p.x+this.direction(p.side)*.75;this.ball.y=p.y;
    const w=this.stallWatch;
    if(w.id!==p.id)this.stallWatch={id:p.id,x:p.x,y:p.y,seconds:0};
