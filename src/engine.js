@@ -205,6 +205,10 @@ export class MatchEngine{
   const B=owner?.side??this.ball.flight?.side??this.restart?.side??this.possession;
   // Press only with nearby players; the rest keep a zonal defensive structure.
   const closest=[null,null],laneTargets=[null,null];
+  // Each side pursues an unowned ball physically, rather than waiting for a
+  // nearby scripted reception or teleporting the recovery.
+  const recovering=!owner&&!this.restart&&!this.ball.flight;
+  const recoverers=[0,1].map(side=>recovering?this.nearest(side,bx,by,p=>p.i!==0):null);
   for(let side=0;side<2;side++){
    if(side===B)continue;
    const sorted=this.teams[side].filter(p=>p.i!==0&&!p.red)
@@ -334,6 +338,9 @@ export class MatchEngine{
      target={x:collective.x,y:collective.y};if(collective.intent)p.aiIntent=collective.intent;
      const intercept=flightAnticipationTarget(this,p,this.ball.flight)||laneTargets[side]?.get(p);
      if(intercept){target={x:intercept.x,y:intercept.y};p.aiIntent=intercept.intent}
+    }
+    if(recovering&&p===recoverers[side]){
+     target={x:bx,y:by};p.aiIntent='Acudir al balón suelto';
     }
     p.fx=clamp(target.x,2,103);p.fy=clamp(target.y,2,66);
     p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
