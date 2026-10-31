@@ -22,7 +22,10 @@ export function chooseShot(g,player,quality,{penalty=false,freeKick=false,header
  return {style,curve:spin,height,power:stats.shotPower,technique:stats.technique};
 }
 export function shotPoint(f,u){
- const t=cap(u,0,1),dx=f.end.x-f.start.x,dy=f.end.y-f.start.y,len=Math.hypot(dx,dy)||1;
+ const t=cap(u,0,1);
+ if(t===0)return {x:f.start.x,y:f.start.y,height:0};
+ if(t===1)return {x:f.end.x,y:f.end.y,height:0};
+ const dx=f.end.x-f.start.x,dy=f.end.y-f.start.y,len=Math.hypot(dx,dy)||1;
  const spin=(f.curve??0)*Math.sin(Math.PI*t);
  // Exactly the same legal start and end points; the arc is physically visible.
  return {x:cap(f.start.x+dx*t-dy/len*spin,-.9,105.9),
