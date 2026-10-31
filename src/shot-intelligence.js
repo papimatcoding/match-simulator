@@ -6,16 +6,15 @@ export function chooseShot(g,player,quality,{penalty=false,freeKick=false,header
  if(header)return {style:'header',curve:0,height:.55,power:stats.shotPower};
  if(penalty)return {style:'placed',curve:0,height:.55,power:stats.shotPower};
  const d=quality.distance,pressure=quality.nearby,angle=quality.angleFactor;
- const finesseScore=(stats.curve-68)*.020+(stats.technique-72)*.010+
-  (stats.composure-75)*.008+(angle>.55?.18:0)+(d>=13&&d<=28?.20:0)-
-  (pressure<2.8?.22:0);
- const powerful=stats.shotPower>=79&&d>=21;
- const finesse=freeKick?(stats.curve>=70):finesseScore>.29&&d>=8&&d<=33;
+ const finesseScore=(stats.curve-80)*.016+(stats.technique-81)*.009+
+  (stats.composure-82)*.006+(angle>.65?.12:0)+(d>=12&&d<=26?.10:0)-
+  (pressure<3?.24:0);
+ const powerful=stats.shotPower>=76&&d>=19;
+ const finesse=freeKick?(stats.curve>=82):finesseScore>.34&&d>=10&&d<=31;
  const style=finesse?'curl':powerful?'power':'drive';
  // Spin travels perpendicular to the shot: visible in the top-down pitch.
  const curviness=style==='curl'?cap(.6+(stats.curve-60)*.05,.55,2.65):0;
  const foot=stats.preferredFoot==='left'?-1:1;
- const cross=(g.goalX(player.side)-player.x)*g.direction(player.side);
  const side=Math.sign(player.y-34)||1;
  const spin=curviness*(side*foot*g.direction(player.side));
  const height=style==='curl'?.65:style==='power'?.45:.28;
