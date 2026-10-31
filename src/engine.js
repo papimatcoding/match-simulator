@@ -736,7 +736,7 @@ export class MatchEngine{
   const u=clamp(f.t/f.duration,0,1);
   const point=f.type==='shot'?shotPoint(f,u):
     {x:f.start.x+(f.end.x-f.start.x)*u,y:f.start.y+(f.end.y-f.start.y)*u,height:0};
-  this.ball.x=point.x;this.ball.y=point.y;this.ball.height=point.height;
+  this.ball.x=point.x;this.ball.y=point.y;this.ball.height=point.height;f.currentHeight=point.height;
   if(f.type==='shot'&&f.outcome==='save'&&f.keeper){const q=f.keeper;const t=clamp(u*1.6,0,1);q.x+=(f.end.x-q.x)*Math.min(.35,t*.3);q.y+=(f.end.y-q.y)*Math.min(.35,t*.3)}
   if(f.type==='pass'&&u>.05){
    const contact=interceptSegment(this,f,previous,this.ball);
