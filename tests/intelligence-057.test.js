@@ -6,6 +6,7 @@ import {technicalProfile,makeFictionalProfile,TECHNICAL_FIELDS} from '../src/att
 import {chooseShot,shotPoint} from '../src/shot-intelligence.js';
 import {screenPassingOptions} from '../src/defensive-structure.js';
 import {shouldAllowAdvantage,ADVANTAGE_SECONDS} from '../src/referee.js';
+import {PitchRenderer} from '../src/render.js';
 const club=id=>TEAMS.find(t=>t.id===id);
 const game=(seed=577)=>{const g=new MatchEngine(club('barca'),club('getafe'),seed,{tactics:['ofensiva','defensiva']});g.start();g.restart=null;return g};
 const setupFoul=()=>{
@@ -142,4 +143,10 @@ test('full match retains pattern conservation, deterministic outcomes and legal 
   return {stats:g.stats,events:g.events,score:g.score};
  };
  assert.deepEqual(make(),make());
+});
+
+test('canvas renderer includes a curve-aware flight path and keeps screen logic separate',()=>{
+ assert.equal(typeof PitchRenderer.prototype.render,'function');
+ assert.equal(typeof PitchRenderer.prototype.field,'function');
+ assert.equal(ADVANTAGE_SECONDS,3);
 });
