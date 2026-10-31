@@ -1,3 +1,4 @@
+import {shotPoint} from './shot-intelligence.js?v=0.5.7';
 const mix=(a,b,t)=>a+(b-a)*t;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export class PitchRenderer{
@@ -57,10 +58,18 @@ export class PitchRenderer{
   }
   const {ball}=engine;const [bx,by]=this.point(ball.x,ball.y);
   const rad=clamp(S*.56,4.5,7);
+  if(ball.flight?.type==='shot'&&ball.flight.style==='curl'){
+   const f=ball.flight,u=f.t/f.duration;
+   ctx.save();ctx.strokeStyle='#ffe6a7c9';ctx.lineWidth=clamp(S*.23,1.6,3);
+   ctx.setLineDash([5,4]);ctx.beginPath();
+   for(let i=0;i<=16;i++){const point=shotPoint(f,u*i/16),[x,y]=this.point(point.x,point.y);if(!i)ctx.moveTo(x,y);else ctx.lineTo(x,y)}
+   ctx.stroke();ctx.setLineDash([]);ctx.restore();
+  }
   ctx.beginPath();ctx.ellipse(bx+1.4,by+3.5,rad*1.05,rad*.58,0,0,7);ctx.fillStyle='#001e16ba';ctx.fill();
-  ctx.beginPath();ctx.arc(bx,by,rad,0,7);ctx.fillStyle='#fffdf1';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#293e3b';ctx.stroke();
-  ctx.beginPath();ctx.arc(bx,by,rad*.35,0,7);ctx.fillStyle='#23352e';ctx.fill();
-  if(ball.flight){const [fx,fy]=this.point(ball.flight.start.x,ball.flight.start.y);ctx.beginPath();ctx.setLineDash([2,5]);ctx.moveTo(fx,fy);ctx.lineTo(bx,by);ctx.strokeStyle='#ffffff80';ctx.lineWidth=1.3;ctx.stroke();ctx.setLineDash([])}
+  const altitude=(ball.flight?.type==='shot'?ball.flight.currentHeight??0:0)*S*.75;
+  ctx.beginPath();ctx.arc(bx,by-altitude,rad,0,7);ctx.fillStyle='#fffdf1';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#293e3b';ctx.stroke();
+  ctx.beginPath();ctx.arc(bx,by-altitude,rad*.35,0,7);ctx.fillStyle='#23352e';ctx.fill();
+  if(ball.flight&&ball.flight.type!=='shot'){const [fx,fy]=this.point(ball.flight.start.x,ball.flight.start.y);ctx.beginPath();ctx.setLineDash([2,5]);ctx.moveTo(fx,fy);ctx.lineTo(bx,by);ctx.strokeStyle='#ffffff80';ctx.lineWidth=1.3;ctx.stroke();ctx.setLineDash([])}
   if(engine.restart?.type==='kickoff'){
    const [cx,cy]=this.point(52.5,34);
    ctx.save();ctx.beginPath();ctx.arc(cx,cy,11*S,0,Math.PI*2);
