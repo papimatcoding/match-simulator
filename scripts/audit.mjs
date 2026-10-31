@@ -6,9 +6,9 @@ import {MatchEngine} from '../src/engine.js';
 const club=id=>TEAMS.find(x=>x.id===id);
 const styles=['presion','defensiva','equilibrada','tiki_taka','ofensiva'];
 const round=(x,n=1)=>+x.toFixed(n);
-const result={version:'0.5.5',seedFormula:'seed*157',clubs:['barca','getafe'],gamesPerTactic:12,tactics:{}};
+const result={version:'0.5.6',seedFormula:'seed*157',clubs:['barca','getafe'],gamesPerTactic:12,tactics:{}};
 for(const tactic of styles){
- const s={passByLength:Object.fromEntries(['short','medium','long'].map(k=>[k,{attempted:0,completed:0}])),passByPressure:Object.fromEntries(['tight','moderate','free'].map(k=>[k,{attempted:0,completed:0}])),xgBins:Object.fromEntries(['low','medium','high'].map(k=>[k,{shots:0,xg:0,goals:0}])),offsideFlags:0,awayThrows:0,awayOffsides:0,looseExits:0,flightInterceptions:0,groundTackles:0,groundTurnovers:0,games:0,shots:0,goals:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,regains:0,quick:0,loose:0,offsides:0,corners:0,throwIns:0,passExits:0,fouls:0,saves:0,patterns:0,patternsCompleted:0,patternAborts:{lost:0,blocked:0,timeout:0,restart:0,reception:0},finalThirdPassAttempts:0,finalThirdPassCompleted:0,shotsAfterPass:0,passLength:0,progressive:0,backward:0,short:0,passAttempts:0,orientedControls:0,attackingSamples:0,spaceRunSamples:0,maxIdle:0,possession:0,timePhases:{restart:0,flight:0,loose:0,possessed:0,free:0},shapeSamples:0,crowdedPairs:0,defensiveWidth:0,defensiveSamples:0,unphysicalPlayers:0,magneticPasses:0,illegalCompletions:0,finished:0};
+ const s={passByLength:Object.fromEntries(['short','medium','long'].map(k=>[k,{attempted:0,completed:0}])),passByPressure:Object.fromEntries(['tight','moderate','free'].map(k=>[k,{attempted:0,completed:0}])),xgBins:Object.fromEntries(['low','medium','high'].map(k=>[k,{shots:0,xg:0,goals:0}])),offsideFlags:0,awayThrows:0,awayOffsides:0,looseExits:0,flightInterceptions:0,groundTackles:0,groundTurnovers:0,duelWins:0,contestedWins:0,duelEvents:0,duelParticipants:0,maxDuelContact:0,secondBallSamples:0,secondBallChasers:0,realSeconds:0,subsHome:0,subsAway:0,windowsHome:0,windowsAway:0,games:0,shots:0,goals:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,regains:0,quick:0,loose:0,offsides:0,corners:0,throwIns:0,passExits:0,fouls:0,saves:0,patterns:0,patternsCompleted:0,patternAborts:{lost:0,blocked:0,timeout:0,restart:0,reception:0},finalThirdPassAttempts:0,finalThirdPassCompleted:0,shotsAfterPass:0,passLength:0,progressive:0,backward:0,short:0,passAttempts:0,orientedControls:0,attackingSamples:0,spaceRunSamples:0,maxIdle:0,possession:0,timePhases:{restart:0,flight:0,loose:0,possessed:0,free:0},shapeSamples:0,crowdedPairs:0,defensiveWidth:0,defensiveSamples:0,unphysicalPlayers:0,magneticPasses:0,illegalCompletions:0,finished:0};
  for(let seed=1;seed<=12;seed++){
   const g=new MatchEngine(club('barca'),club('getafe'),seed*157,{tactics:[tactic,'equilibrada']});
   const pass=g.pass.bind(g);
@@ -56,6 +56,10 @@ for(const tactic of styles){
   for(let tick=0;tick<7200&&g.status!=='finished';tick++){
    if(g.status==='halftime'){g.resumeHalf();idle=0;continue}
    const owner=g.ball.owner,previous={x:owner?.x,y:owner?.y};
+   if(g.ball.loose&&g.duelAssignments instanceof Map){
+    const runners=[...g.duelAssignments.values()].filter(v=>v.kind==='challenge'||v.kind==='second').length;
+    s.secondBallChasers+=runners;s.secondBallSamples++;
+   }
    const phase=g.restart?'restart':g.ball.flight?'flight':g.ball.loose?'loose':g.ball.owner?'possessed':'free';
    s.timePhases[phase]++;
    g.update(.08);
@@ -79,8 +83,18 @@ for(const tactic of styles){
   assert.equal(g.status,'finished',tactic+' seed '+seed);
   s.finished++;const a=g.stats[0];assert.ok(a.completed<=a.passes,'completed > attempted');
   assert.equal(g.goals.length,g.stats[0].goals+g.stats[1].goals);
+  s.realSeconds+=g.realTime;
+  s.subsHome+=g.subsUsed[0];s.subsAway+=g.subsUsed[1];
+  s.windowsHome+=g.subWindowsUsed[0];s.windowsAway+=g.subWindowsUsed[1];
+  for(const side of [0,1]){assert.ok(g.subsUsed[side]<=5,'more than five changes');
+   assert.ok(g.subWindowsUsed[side]<=3,'more than three windows');
+   assert.equal(g.subsUsed[side],g.stats[side].substitutions);}
   s.games++;for(const key of ['shots','goals','onTarget','xg','passes','completed','interceptions','offsides','corners','throwIns','fouls','saves'])s[key]+=a[key];
   s.orientedControls+=a.orientedControls;
+  s.duelWins+=a.looseRecoveries;s.contestedWins+=a.contestedRecoveries;
+  const duels=g.events.filter(e=>e.type==='duel'&&e.side===0);
+  s.duelEvents+=duels.length;s.duelParticipants+=duels.reduce((n,e)=>n+e.participants,0);
+  s.maxDuelContact=Math.max(s.maxDuelContact,...duels.map(e=>e.recoveryDistance),0);
   s.regains+=g.collectiveStats[0].regains;s.quick+=g.collectiveStats[0].counterpressRecoveries;
   s.loose+=g.events.filter(e=>e.type==='loose'&&e.side===0).length;
   s.passExits+=g.events.filter(e=>e.type==='throwIn'&&e.description.includes('pase de')).length;
@@ -96,7 +110,15 @@ for(const tactic of styles){
   s.groundTurnovers+=g.events.filter(e=>e.type==='turnover'&&e.side===0).length;
  }
  result.tactics[tactic]={
-  matches:s.games,shotsPerMatch:round(s.shots/s.games),goalsPerMatch:round(s.goals/s.games),
+  matches:s.games,visualMinutesPerHalf:round(s.realSeconds/s.games/120,2),
+  substitutionsPerMatch:{home:round(s.subsHome/s.games),away:round(s.subsAway/s.games)},
+  inPlayWindowsPerMatch:{home:round(s.windowsHome/s.games,2),away:round(s.windowsAway/s.games,2)},
+  looseBallRecoveriesPerMatch:round(s.duelWins/s.games),
+  contestedRecoveriesPerMatch:round(s.contestedWins/s.games),
+  averageContendersAtDuel:s.duelEvents?round(s.duelParticipants/s.duelEvents,2):null,
+  meanAssignedChasersDuringLooseBall:s.secondBallSamples?round(s.secondBallChasers/s.secondBallSamples,2):null,
+  furthestRecoveryContactM:round(s.maxDuelContact,2),
+  shotsPerMatch:round(s.shots/s.games),goalsPerMatch:round(s.goals/s.games),
   xgPerMatch:round(s.xg/s.games,2),goalsPerXg:round(s.goals/s.xg,2),
   shotsOnTargetPct:round(100*s.onTarget/s.shots),
   passesPerMatch:round(s.passes/s.games),passCompletionPct:round(100*s.completed/s.passes),
@@ -136,11 +158,14 @@ for(const tactic of styles){
  };
  assert.equal(s.unphysicalPlayers,0);
  assert.equal(s.magneticPasses,0);
+ assert.ok(s.realSeconds/s.games>392&&s.realSeconds/s.games<432,'clock no longer 3–4 min per half '+tactic);
+ assert.ok(s.maxDuelContact<1.41,'player won a remote ball '+tactic);
+ assert.ok(s.secondBallChasers/Math.max(1,s.secondBallSamples)>2.8,'not enough pursuing a loose ball '+tactic);
  assert.ok(s.timePhases.free/Object.values(s.timePhases).reduce((a,b)=>a+b,0)<.1,
   'unowned stationary ball consumed too much match time '+tactic);
  assert.ok(s.maxIdle<2.3,'stationary carrier '+tactic);
  assert.ok(s.completed/s.passes>.65&&s.completed/s.passes<.95,'pass success outside audit band '+tactic);
  assert.ok(s.loose>0,'no loose balls '+tactic);
 }
-console.log('MATCHLAB CHANCE CREATION + SPATIAL AUDIT 0.5.5: 60 complete seeded matches, spatial and xG-calibration metrics by tactic');
+console.log('MATCHLAB COORDINATED DUEL + TEMPO AUDIT 0.5.6: 60 complete seeded matches, spatial and xG-calibration metrics by tactic');
 console.log(JSON.stringify(result,null,2));

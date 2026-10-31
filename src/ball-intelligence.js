@@ -18,9 +18,15 @@ export function interceptSegment(g,flight,previous,current){
   const t=cap(((p.x-previous.x)*dx+(p.y-previous.y)*dy)/d2,0,1);
   const point={x:previous.x+dx*t,y:previous.y+dy*t};
   return {p,point,d:distance(p,point)};
- }).filter(z=>z.d<2.05).sort((a,b)=>a.d-b.d);
+ }).filter(z=>z.d<1.55).sort((a,b)=>a.d-b.d);
+ // One interception attempt per defender per pass, at the actual crossing.
+ // Re-rolling on every frame made a defender effectively magnetic.
+ const checked=flight.checkedDefenders??(flight.checkedDefenders=new Set());
  for(const z of possible){
-  const chance=cap((2.25-z.d)/2.25*(.78+(z.p.skills.defense-75)*.009),.05,.82);
+  if(checked.has(z.p.id??z.p.i))continue;
+  checked.add(z.p.id??z.p.i);
+  const tackle=z.p.skills.tackle??z.p.skills.defense??75;
+  const chance=cap((1.65-z.d)/1.65*(.53+(tackle-75)*.007),.03,.65);
   if(g.rng()<chance)return {player:z.p,point:z.point};
  }
  return null;

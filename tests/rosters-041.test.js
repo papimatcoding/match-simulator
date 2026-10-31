@@ -26,7 +26,7 @@ test('verified 2026/27 moves are not left in previous teams substitute lists',()
 });
 test('substitution moment contains exact team, entrant, exit and minute from engine',()=>{
  const g=new MatchEngine(club('barca'),club('madrid'),222);g.start();
- g.time=56*60;g.restartAt('throwIn',0,{x:60,y:0},1.1);
+ g.time=56*60;g.teams[0].find(p=>p.role==='CM').energy=.50;g.restartAt('throwIn',0,{x:60,y:0},1.1);
  assert.ok(g.subMoment,'expected a stoppage with changes');
  assert.ok(g.subMoment.id>0);
  assert.ok(g.subMoment.minute>=56);

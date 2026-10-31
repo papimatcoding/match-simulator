@@ -82,7 +82,7 @@ test('pass reception sets a physical oriented target and keeps accounting exact'
  assert.equal(g.ball.owner,to);
  assert.ok(to.aiEscape,'receiver gets a proposed touch direction');
  assert.ok(metres(initial,to)<.2,'reception does not teleport receiver');
- assert.ok(g.decision<=.22/g.tactic(0).tempo);
+ assert.ok(g.decision>=.28/g.tactic(0).tempo,'receiving a pass must allow an oriented first touch');
  const before={x:to.x,y:to.y};
  g.movePlayers(.08);
  assert.ok(metres(before,to)<=.75,'oriented control must move physically');
