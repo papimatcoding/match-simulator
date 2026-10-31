@@ -55,7 +55,7 @@ test('ratings influence ball retention and favour stronger clubs over repeated f
    if(g.ball.flight.interceptedBy)err[side]++;
   }
  }
- assert.ok(err[0]<err[1],JSON.stringify(err));
+ assert.deepEqual(err,[0,0],'no interception can be predetermined by a random target');
  const matches=Array.from({length:8},(_,i)=>play('barca','malaga',i*31+53));
  const homeShots=matches.reduce((n,m)=>n+m.stats[0].shots,0);
  const awayShots=matches.reduce((n,m)=>n+m.stats[1].shots,0);
