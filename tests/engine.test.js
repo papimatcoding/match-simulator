@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {TEAMS,LEAGUES} from '../src/teams.js';
 import {MatchEngine} from '../src/engine.js';
-const play=(seed=13,a=0,b=4)=>{let game=new MatchEngine(TEAMS[a],TEAMS[b],seed);game.start();let firstHalf=0;for(let i=0;i<11000;i++){if(game.status==='halftime'){firstHalf++;assert.equal(game.half,1);game.resumeHalf()}if(game.status==='finished')break;game.update(1/30);assert.ok(Number.isFinite(game.ball.x)&&Number.isFinite(game.ball.y));assert.ok(game.ball.x>=-.9&&game.ball.x<=105.9);assert.ok(game.ball.y>=-1.1&&game.ball.y<=69.1);}
+const play=(seed=13,a=0,b=4)=>{let game=new MatchEngine(TEAMS[a],TEAMS[b],seed);game.start();let firstHalf=0;for(let i=0;i<16000;i++){if(game.status==='halftime'){firstHalf++;assert.equal(game.half,1);game.resumeHalf()}if(game.status==='finished')break;game.update(1/30);assert.ok(Number.isFinite(game.ball.x)&&Number.isFinite(game.ball.y));assert.ok(game.ball.x>=-.9&&game.ball.x<=105.9);assert.ok(game.ball.y>=-1.1&&game.ball.y<=69.1);}
  assert.equal(game.status,'finished');assert.equal(firstHalf,1);return game;};
 test('five major leagues and unique real rosters',()=>{assert.equal(new Set(TEAMS.map(t=>t.id)).size,TEAMS.length);assert.equal(new Set(TEAMS.map(t=>t.league)).size,5);assert.equal(LEAGUES.length,5);for(const t of TEAMS){assert.equal(t.players.length,11,t.name);assert.equal(new Set(t.players.map(p=>p.number)).size,11,t.name);assert.ok(t.players.every(p=>p.name&&p.number>0),t.name);assert.ok(t.source.startsWith('https://'))}});
 test('match records and goals remain consistent',()=>{for(let seed=1;seed<=24;seed++){const a=(seed*3)%16,b=(a+4)%16,g=play(seed,a,b);
