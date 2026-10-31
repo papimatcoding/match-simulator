@@ -192,3 +192,15 @@ Ver [auditoría 0.5.5](docs/AUDIT-055.md).
 **Límites:** el banquillo actual sigue siendo un ejemplo editorial reducido; no se han implementado lesiones ni todos los protocolos arbitrales, ni un conjunto de estadísticas real de jugadores. Los tiros con rosca y la base de datos individual están previstos como sistemas posteriores. MatchLab sigue separado de FUERA DE GUIÓN.
 
 Ver [auditoría 0.5.7](docs/AUDIT-056.md).
+
+## MatchLab 0.5.7 — Ventaja arbitral, coberturas y remates con rosca
+
+- **Ley de la ventaja:** cuando una falta no grave corta una posesión prometedora, el árbitro puede dejar continuar. Si el equipo pierde la oportunidad en unos segundos, se vuelve al lugar de la infracción; las amarillas se anotan y se muestran en la siguiente interrupción. Los penaltis y rojas no quedan sujetos a ventaja. Véase [Ley 5 de IFAB, temporada 2026/27](https://www.theifab.com/laws/latest/the-referee/).
+- **Remate técnico y físico:** disparos colocados con rosca (curva realmente dibujada en 2D), potentes y directos, además de cabezazos; efecto y potencia dependen del perfil técnico de quien remata.
+- **Atributos extensibles:** `src/attributes.js` define técnica, efecto, potencia, definición y compostura, con validación de origen para jugadores actuales y personalizados. **Todos los valores actuales son estimaciones de desarrollo, no ratings oficiales verificados**.
+- **Defensa:** `src/defensive-structure.js` selecciona defensores disponibles para proteger receptores peligrosos, sin teletransportarlos ni bloquear automáticamente los pases. El sistema fue calibrado para no reducir de forma excesiva la creación de ocasiones.
+- **Pruebas:** `tests/intelligence-057.test.js` y auditoría ampliada de 60 partidos, incluyendo registro de ventajas concedidas, aprovechas y llamadas atrás, tipos de tiro y coberturas defensivas.
+
+Limitaciones conocidas: distribución aún experimental de disparos con efecto, ausencia de base de datos profesional exportable a Excel, faltas con ventaja parcialmente modeladas, reducción de remates en ciertos planes y defensa que sigue acumulando demasiados pases. El simulador de carrera **FUERA DE GUIÓN** sigue aislado.
+
+Ver [AUDIT-057.md](docs/AUDIT-057.md).
