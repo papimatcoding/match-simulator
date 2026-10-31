@@ -1,16 +1,19 @@
-import {buildLineup,buildBench} from './teams.js?v=0.5.5';
-import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.5';
-import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.5';
-import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.5';
-import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.5';
-import {resetCollective,onPossessionChange,getCollectivePhase,pressingAssignments,collectiveTarget} from './collective.js?v=0.5.5';
-import {aimPass,interceptSegment,defensiveLaneTargets,flightAnticipationTarget,fieldExit} from './ball-intelligence.js?v=0.5.5';
-import {decisionDelay,orientedFirstTouch,findSpaceRun} from './tempo-control.js?v=0.5.5';
+import {buildLineup,buildBench} from './teams.js?v=0.5.6';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.6';
+import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.6';
+import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.6';
+import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.6';
+import {resetCollective,onPossessionChange,getCollectivePhase,pressingAssignments,collectiveTarget} from './collective.js?v=0.5.6';
+import {aimPass,interceptSegment,defensiveLaneTargets,flightAnticipationTarget,fieldExit} from './ball-intelligence.js?v=0.5.6';
+import {decisionDelay,orientedFirstTouch,findSpaceRun} from './tempo-control.js?v=0.5.6';
+import {recoveryAssignments,contestedRecovery} from './duels.js?v=0.5.6';
+import {substitutionPlan} from './coach.js?v=0.5.6';
+export const MATCH_CLOCK_SCALE=13.5; // 45 game minutes in 200 real seconds.
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
 const rndFactory=seed=>{let s=(seed>>>0)||1;return()=>((s^=s<<13,s^=s>>>17,s^=s<<5)>>>0)/4294967296};
-const STATS=()=>({goals:0,shots:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,fouls:0,corners:0,offsides:0,yellows:0,reds:0,saves:0,throwIns:0,substitutions:0,freeKicks:0,possSeconds:0,orientedControls:0});
+const STATS=()=>({goals:0,shots:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,fouls:0,corners:0,offsides:0,yellows:0,reds:0,saves:0,throwIns:0,substitutions:0,freeKicks:0,possSeconds:0,orientedControls:0,looseRecoveries:0,contestedRecoveries:0});
 const safeName=p=>p?.name||'un futbolista';
 export class MatchEngine{
  constructor(home,away,seed=20261029,options={}){
@@ -19,7 +22,7 @@ export class MatchEngine{
   this.teams=[buildLineup(home,0),buildLineup(away,1)];
   for(let side=0;side<2;side++)for(const p of this.teams[side])assignRole(p,defaultRole(p,this.clubs[side]));
   this.debugAI=false;this.selectedPlayer=null;this.diagnostics=[];this.stallWatch={id:null,x:0,y:0,seconds:0};
-  this.benches=[buildBench(home,0),buildBench(away,1)];this.rosterHistory=this.teams.map((t,i)=>[...t,...this.benches[i]]);this.subsUsed=[0,0];this.subWindows=[56,68,79];this.subMoment=null;this.subMomentSerial=0;
+  this.benches=[buildBench(home,0),buildBench(away,1)];this.rosterHistory=this.teams.map((t,i)=>[...t,...this.benches[i]]);this.subsUsed=[0,0];this.subWindowsUsed=[0,0];this.lastSubMinute=[-100,-100];this.subMoment=null;this.subMomentSerial=0;
   this.stats=[STATS(),STATS()];this.events=[];this.goals=[];
   this.ball={x:52.5,y:34,owner:null,flight:null,loose:null};this.attackPasses=0;
    this.combo=null;this.comboCooldown=0;this.patterns=[0,1].map(()=>({started:0,completed:0,aborted:{lost:0,blocked:0,timeout:0,restart:0,reception:0}}));
@@ -105,7 +108,7 @@ export class MatchEngine{
   const attacking=this.ball.owner?.side??this.ball.flight?.side;
   if(attacking===undefined)return false;
   const x=this.ball.x,dir=this.direction(attacking);
-  return (this.goalX(attacking)-x)*dir<30 && (this.ball.owner!==null||this.ball.flight!==null);
+  return (this.goalX(attacking)-x)*dir<40 && (this.ball.owner!==null||this.ball.flight!==null);
  }
  finishPeriod(){
   this.pendingPeriod=null;this.periodStart=null;this.ballFree();this.ball.flight=null;this.restart=null;this.abortCombo('restart');
@@ -114,13 +117,14 @@ export class MatchEngine{
  }
  update(dt){
   if(this.status!=='live')return;
-  dt=clamp(dt,0,.08);this.realTime+=dt;this.time+=dt*18;
+  dt=clamp(dt,0,.08);this.realTime+=dt;this.time+=dt*MATCH_CLOCK_SCALE;
   this.toastTTL=Math.max(0,this.toastTTL-dt);this.goalFlash=Math.max(0,this.goalFlash-dt);
   if(this.offsideMark){this.offsideMark.ttl-=dt;if(this.offsideMark.ttl<=0)this.offsideMark=null}
   const limit=this.half===1?2700:5400;
   if(this.time>=limit){
    if(this.periodStart===null)this.periodStart=this.time;
-   if(!this.dangerous()||this.time>=limit+40){this.finishPeriod();return}
+   const mustFinish=this.ball.flight?.type==='shot'||this.restart?.type==='penalty';
+    if((!this.dangerous()&&!mustFinish)||(this.time>=limit+115&&!mustFinish)){this.finishPeriod();return}
    this.pendingPeriod=this.half;
   }
   if(this.ball.owner)this.stats[this.ball.owner.side].possSeconds+=dt;
@@ -146,9 +150,15 @@ export class MatchEngine{
     p.aiEscape=escapeDirection(this,p);this.decision=Math.min(this.decision,.15);
    }
    this.decision-=dt;if(this.decision<=0)this.decide(p);return}
-  const allowed=p=>!this.ball.loose||this.ball.loose.age>.24||p.id!==this.ball.loose.failedId;
-   const near0=this.nearest(0,this.ball.x,this.ball.y,allowed),near1=this.nearest(1,this.ball.x,this.ball.y,allowed);
-  const choice=dist(near0,this.ball)<=dist(near1,this.ball)?near0:near1;if(choice&&dist(choice,this.ball)<2.8)this.hold(choice);
+  const duel=contestedRecovery(this);
+  if(duel){
+   const side=duel.winner.side;
+   this.stats[side].looseRecoveries++;
+   if(duel.contested)this.stats[side].contestedRecoveries++;
+   this.hold(duel.winner);
+   this.add('duel',side,`${duel.winner.name} gana ${duel.contested?'un balón dividido':'el balón suelto'}.`,
+    duel.winner,{participants:duel.candidates,contested:duel.contested,recoveryDistance:+duel.travel.toFixed(2)});
+  }
  }
  advanceLoose(dt){
   const loose=this.ball.loose;if(!loose)return false;
@@ -178,37 +188,44 @@ export class MatchEngine{
   return false;
  }
  makeSubsAtStoppage(){
-  if(this.time<56*60||this.time>=90*60)return;
+  const minute=this.time/60,halftime=this.half===2&&this.time===2700;
   const changes=[];
-  for(let side=0;side<2;side++){
-   if(this.subsUsed[side]>=3||this.time/60<this.subWindows[this.subsUsed[side]])continue;
+  for(const side of [0,1]){
+   const plan=substitutionPlan(this,side,{halftime});
+   if(!plan.length)continue;
    const team=this.teams[side],bench=this.benches[side];
-   let candidates=team.filter(p=>p.i>0&&!p.red&&!p.subOn).sort((a,b)=>a.energy-b.energy);
-   const outgoing=candidates.find(p=>bench.some(q=>q.role===p.role))||candidates.find(p=>bench.some(q=>q.group===p.group));
-   if(!outgoing)continue;
-   const idx=bench.findIndex(q=>q.role===outgoing.role);
-   const j=idx>=0?idx:bench.findIndex(q=>q.group===outgoing.group);
-   if(j<0)continue;
-   const incoming=bench.splice(j,1)[0],slot=team.indexOf(outgoing);
-   Object.assign(incoming,{i:outgoing.i,anchor:{...outgoing.anchor},x:outgoing.x,y:outgoing.y,fx:outgoing.fx,fy:outgoing.fy,side,subOn:true,energy:1,red:false});
-   assignRole(incoming,defaultRole(incoming,this.clubs[side]));team[slot]=incoming;this.subsUsed[side]++;this.stats[side].substitutions++;
-   this.add('substitution',side,`Cambio en ${this.clubs[side].name}: entra ${incoming.name} (#${incoming.number}) por ${outgoing.name} (#${outgoing.number}).`,
-    incoming,{in:incoming.name,out:outgoing.name,inNumber:incoming.number,outNumber:outgoing.number});
-   changes.push({side,team:this.clubs[side].name,color:this.clubs[side].color,
-      in:{name:incoming.name,number:incoming.number},out:{name:outgoing.name,number:outgoing.number}});
-   this.restart.kickerId=this.selectKicker(this.restart)?.id;
+   for(const selection of plan){
+    const outgoing=selection.out,incoming=selection.incoming;
+    const j=bench.indexOf(incoming),slot=team.indexOf(outgoing);
+    if(j<0||slot<0||this.subsUsed[side]>=5)continue;
+    bench.splice(j,1);
+    Object.assign(incoming,{i:outgoing.i,anchor:{...outgoing.anchor},x:outgoing.x,y:outgoing.y,
+      fx:outgoing.fx,fy:outgoing.fy,side,subOn:true,energy:1,red:false});
+    assignRole(incoming,defaultRole(incoming,this.clubs[side]));
+    team[slot]=incoming;this.subsUsed[side]++;this.stats[side].substitutions++;
+    this.add('substitution',side,`Cambio en ${this.clubs[side].name}: ${incoming.name} por ${outgoing.name} (${selection.reason}).`,
+     incoming,{in:incoming.name,out:outgoing.name,reason:selection.reason});
+    changes.push({side,team:this.clubs[side].name,color:this.clubs[side].color,
+     in:{name:incoming.name,number:incoming.number},out:{name:outgoing.name,number:outgoing.number}});
+   }
+   if(changes.some(c=>c.side===side)){
+    if(!halftime)this.subWindowsUsed[side]++;
+    this.lastSubMinute[side]=minute;
+   }
   }
-  if(changes.length)this.subMoment={id:++this.subMomentSerial,minute:Math.ceil(this.time/60),changes};
+  if(changes.length){
+   this.subMoment={id:++this.subMomentSerial,minute:Math.ceil(minute),changes};
+   if(this.restart)this.restart.kickerId=this.selectKicker(this.restart)?.id;
+  }
  }
  movePlayers(dt){
   const owner=this.ball.owner, bx=this.ball.x,by=this.ball.y;
   const B=owner?.side??this.ball.flight?.side??this.restart?.side??this.possession;
   // Press only with nearby players; the rest keep a zonal defensive structure.
   const closest=[null,null],laneTargets=[null,null];
-  // Each side pursues an unowned ball physically, rather than waiting for a
-  // nearby scripted reception or teleporting the recovery.
-  const recovering=!owner&&!this.restart&&!this.ball.flight&&!this.ball.loose;
-  const recoverers=[0,1].map(side=>recovering?this.nearest(side,bx,by,p=>p.i!==0):null);
+  // Reassign challengers as the rolling ball and defenders change position.
+  const recovering=recoveryAssignments(this);
+  this.duelAssignments=recovering;
   for(let side=0;side<2;side++){
    if(side===B)continue;
    const sorted=this.teams[side].filter(p=>p.i!==0&&!p.red)
@@ -339,11 +356,10 @@ export class MatchEngine{
      const intercept=flightAnticipationTarget(this,p,this.ball.flight)||laneTargets[side]?.get(p);
      if(intercept){target={x:intercept.x,y:intercept.y};p.aiIntent=intercept.intent}
     }
-    if(recovering&&p===recoverers[side]){
-     target={x:bx,y:by};p.aiIntent='Acudir al balón suelto';
-    }
+    const recovery=recovering.get(p);
+    if(recovery){target={x:recovery.x,y:recovery.y};p.aiIntent=recovery.intent;}
     p.fx=clamp(target.x,2,103);p.fy=clamp(target.y,2,66);
-    p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
+    p.energy=clamp(p.energy-(.00042+(hypot(p.fx-p.x,p.fy-p.y)>1?.00028:0)+(p===owner?.0006:0))*dt,.50,1);
     const pressureStyle=tactic.press;
     const delta=hypot(p.fx-p.x,p.fy-p.y);
     const rawSpeed=p.i===0?2.5:(p===owner?3.5:pressers[0]===p?6.0*pressureStyle:pressers[1]===p?5.7*pressureStyle:pressers[2]===p?5.4*pressureStyle:5.15)*(.75+p.skills.pace/300)*(.75+.25*p.energy);
@@ -355,7 +371,7 @@ export class MatchEngine{
    const remaining=Math.abs(this.goalX(owner.side)-owner.x);
    if(owner.aiEscape){const dest=owner.aiEscape,dd=hypot(dest.x-owner.x,dest.y-owner.y);if(dd>.5){const step=Math.min(dd,dt*5.4);owner.x+=(dest.x-owner.x)/dd*step;owner.y+=(dest.y-owner.y)/dd*step}else owner.aiEscape=null}
    if(!owner.aiEscape&&remaining>12&&pressure>2.5){owner.x=clamp(owner.x+dir*dt*(2.0+owner.rating/90),2,103);owner.y=clamp(owner.y+Math.sin(this.realTime*.8+owner.i)*dt*.34,2,66)}
-   if(pressure<2.2&&this.rng()<dt*(.12+Math.max(0,front.skills.defense-70)*.004)){
+   if(pressure<2.2&&this.rng()<dt*(.12+Math.max(0,front.skills.tackle-70)*.004)){
     this.ball.x=owner.x;this.ball.y=owner.y;
     if(this.rng()<.16)this.foul(owner,front);
     else if(Math.abs(owner.y-34)>25&&this.rng()<.42){this.clearance(front,owner.side)}
@@ -712,7 +728,7 @@ export class MatchEngine{
    this.stats[f.side].completed++;this.hold(recipient);
     recipient.aiEscape=orientedFirstTouch(this,recipient);
     if(recipient.aiEscape)this.stats[f.side].orientedControls++;
-    this.decision=Math.min(this.decision,.22/this.tactic(recipient.side).tempo);
+    this.decision=Math.max(this.decision,.28/this.tactic(recipient.side).tempo);
     this.lastPass={from:f.from.name,to:recipient.id,side:f.side,time:this.time};
    if(this.pendingCornerHeader===recipient.id)this.decision=.22;
   }
