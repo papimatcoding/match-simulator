@@ -10,7 +10,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
 const rndFactory=seed=>{let s=(seed>>>0)||1;return()=>((s^=s<<13,s^=s>>>17,s^=s<<5)>>>0)/4294967296};
-const STATS=()=>({goals:0,shots:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,fouls:0,corners:0,offsides:0,yellows:0,reds:0,saves:0,throwIns:0,substitutions:0,freeKicks:0,possSeconds:0});
+const STATS=()=>({goals:0,shots:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,fouls:0,corners:0,offsides:0,yellows:0,reds:0,saves:0,throwIns:0,substitutions:0,freeKicks:0,possSeconds:0,orientedControls:0});
 const safeName=p=>p?.name||'un futbolista';
 export class MatchEngine{
  constructor(home,away,seed=20261029,options={}){
@@ -688,6 +688,7 @@ export class MatchEngine{
    recipient.x+=clamp(f.end.x-recipient.x,-.18,.18);recipient.y+=clamp(f.end.y-recipient.y,-.18,.18);
    this.stats[f.side].completed++;this.hold(recipient);
     recipient.aiEscape=orientedFirstTouch(this,recipient);
+    if(recipient.aiEscape)this.stats[f.side].orientedControls++;
     this.decision=Math.min(this.decision,.22/this.tactic(recipient.side).tempo);
     this.lastPass={from:f.from.name,to:recipient.id,side:f.side,time:this.time};
    if(this.pendingCornerHeader===recipient.id)this.decision=.22;
