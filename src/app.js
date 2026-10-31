@@ -1,8 +1,8 @@
-import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.5.3';
-import {MatchEngine} from './engine.js?v=0.5.3';
-import {PitchRenderer} from './render.js?v=0.5.3';
-import {TACTICS,defaultTactic} from './tactics.js?v=0.5.3';
-import {ROLES,eligibleRoles,ROLE_FOCUS} from './roles.js?v=0.5.3';
+import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.5.4';
+import {MatchEngine} from './engine.js?v=0.5.4';
+import {PitchRenderer} from './render.js?v=0.5.4';
+import {TACTICS,defaultTactic} from './tactics.js?v=0.5.4';
+import {ROLES,eligibleRoles,ROLE_FOCUS} from './roles.js?v=0.5.4';
 const $=q=>document.querySelector(q);
 // The displayed revision proves which ratings dataset the browser has loaded.
 const revisionLabel=document.getElementById('ratings-revision');
