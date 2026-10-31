@@ -6,10 +6,10 @@ const file = path => readFileSync(new URL(path,import.meta.url),'utf8');
 test('published module graph busts cached ratings from prior builds', () => {
  const version = '0.5.4';
  assert.equal(RATINGS_REVISION,'0.5.0');
- assert.match(file('../index.html'), /src\/app\.js\?v=0\.5\.3/);
- assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.5\.3/);
- assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.5\.3/);
- assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.5\.3/);
+ assert.match(file('../index.html'), /src\/app\.js\?v=0\.5\.4/);
+ assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.5\.4/);
+ assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.5\.4/);
+ assert.match(file('../src/engine.js'), /\.\/teams\.js\?v=0\.5\.4/);
  assert.match(file('../index.html'), /id="ratings-revision"/);
 });
 test('lineup screen data uses footballer-specific values, not team OVR or shirt',()=>{
