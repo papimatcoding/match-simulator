@@ -136,6 +136,8 @@ for(const tactic of styles){
  };
  assert.equal(s.unphysicalPlayers,0);
  assert.equal(s.magneticPasses,0);
+ assert.ok(s.timePhases.free/Object.values(s.timePhases).reduce((a,b)=>a+b,0)<.1,
+  'unowned stationary ball consumed too much match time '+tactic);
  assert.ok(s.maxIdle<2.3,'stationary carrier '+tactic);
  assert.ok(s.completed/s.passes>.65&&s.completed/s.passes<.95,'pass success outside audit band '+tactic);
  assert.ok(s.loose>0,'no loose balls '+tactic);
