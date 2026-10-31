@@ -77,3 +77,21 @@ test('full seeded matches reconcile all completed, abandoned and started pattern
   assert.equal(g.goals.length,g.stats[0].goals+g.stats[1].goals);
  }
 });
+
+test('both teams physically close on an ownerless ball without jumping into possession',()=>{
+ const {g}=setup(559);
+ g.combo=null;g.ball.owner=null;g.ball.flight=null;g.ball.loose=null;g.ball.x=75;g.ball.y=34;
+ for(const p of g.teams.flat())if(p.i!==0){p.x=p.side?90:52;p.y=10+(p.i%6)*5}
+ const closest=[0,1].map(side=>g.nearest(side,75,34,p=>p.i!==0));
+ const before=closest.map(p=>({x:p.x,y:p.y,d:Math.hypot(p.x-75,p.y-34)}));
+ g.movePlayers(.08);
+ closest.forEach((p,i)=>{
+  const distance=Math.hypot(p.x-75,p.y-34);
+  assert.ok(distance<before[i].d,'both sides should pursue free balls');
+  assert.ok(Math.hypot(p.x-before[i].x,p.y-before[i].y)<=6.71*.08,'recovery cannot teleport');
+  assert.match(p.aiIntent,/balón suelto/);
+ });
+ assert.equal(g.ball.owner,null);
+ assert.equal(g.ball.x,75);
+ assert.equal(g.ball.y,34);
+});
