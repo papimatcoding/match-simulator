@@ -4,7 +4,8 @@ const cap=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export function screenPassingOptions(g,defendingSide,carrier,pressers=[]){
  const screens=new Map();
- if(!carrier||carrier.red||carrier.side===defendingSide||g.restart||g.ball.flight)return screens;
+ if(!carrier||carrier.red||carrier.side===defendingSide||g.restart||g.ball.flight||
+  Math.abs(g.goalX(carrier.side)-carrier.x)>43)return screens;
  const attackDir=g.direction(carrier.side),dir=g.direction(defendingSide);
  const opponents=g.teams[carrier.side].filter(p=>!p.red&&p.i!==0&&p!==carrier&&
   dist(p,carrier)>5&&dist(p,carrier)<36&&(p.x-carrier.x)*attackDir>-7);
