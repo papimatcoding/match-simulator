@@ -20,7 +20,7 @@ export function interceptSegment(g,flight,previous,current){
   return {p,point,d:distance(p,point)};
  }).filter(z=>z.d<2.05).sort((a,b)=>a.d-b.d);
  for(const z of possible){
-  const chance=cap((2.25-z.d)/2.25*(.78+(z.p.skills.defense-75)*.009),.05,.82);
+  const chance=cap((2.25-z.d)/2.25*(.78+((z.p.skills.tackle??z.p.skills.defense??75)-75)*.009),.05,.82);
   if(g.rng()<chance)return {player:z.p,point:z.point};
  }
  return null;
