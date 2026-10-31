@@ -405,7 +405,8 @@ export class MatchEngine{
      const intercept=flightAnticipationTarget(this,p,this.ball.flight)||laneTargets[side]?.get(p);
      const cover=screens[side]?.get(p);
      if(intercept){target={x:intercept.x,y:intercept.y};p.aiIntent=intercept.intent}
-     else if(cover){target={x:cover.x,y:cover.y};p.aiIntent=cover.intent}
+     else if(cover){target={x:target.x*.64+cover.x*.36,y:target.y*.64+cover.y*.36};
+      p.aiIntent=cover.intent}
     }
     const recovery=recovering.get(p);
     if(recovery){target={x:recovery.x,y:recovery.y};p.aiIntent=recovery.intent;}
