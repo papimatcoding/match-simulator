@@ -138,3 +138,10 @@ Las reglas de decisión de MatchLab son aproximaciones futbolísticas propias, n
 - La barra táctica y «Analizar IA» muestran fases y zonas; las recuperaciones rápidas tras pérdida se cuentan solo si la posesión cambia realmente dentro de la ventana y a menos de 22 metros.
 - Las jugadas a balón parado reinician el estado colectivo. Los ratings siguen siendo revisión 0.5.0, sin cambios de atributos.
 - Próximos pasos: lectura predictiva de líneas de pase, coberturas y calibración con partidos reales. El motor es heurístico y no reproduce código propietario de EA.
+
+## 0.5.2 — Recepciones reales, errores de pase e intercepciones espaciales
+- El balón ya no se desvía automáticamente hacia un rival escogido por sorteo: solo puede interceptarlo un jugador que alcance su trayectoria real, incluida la llegada.
+- El error de pase depende de distancia, técnica y presión; las trayectorias se recortan al cruzar una línea real del campo. Un pase no se cuenta como completado hasta que el receptor controla físicamente la pelota. Los controles difíciles pueden dejar balones divididos.
+- La presión alta ya no aumenta la velocidad de carrera sin límite: máximo 6,7 m/s para futbolistas de campo. Se refuerza moderadamente el riesgo de robo a un portador acosado.
+- **Auditoría reproducible:** `npm run audit` simula 60 partidos completos (12 por cada plan táctico), registra más de 25 indicadores por plan y valida invariantes. El despliegue ejecuta pruebas y auditoría antes de publicar. Resultados y límites: [Auditoría 0.5.2](docs/AUDIT-052.md).
+- **Limitaciones que siguen abiertas:** fueras de juego y saques de banda demasiado escasos; pocas recuperaciones reales tras presión; ritmo bajo de pases; xG aún poco calibrado. No presentar esta versión como motor realista acabado.
