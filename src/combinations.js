@@ -57,15 +57,39 @@ export function combinationValid(g,combo){
  if(g.ball.flight&&g.ball.flight.side!==combo.side)return false;
  return true;
 }
-export function returnPassViable(g,combo){
- if(!combinationValid(g,combo)||g.ball.owner!==combo.wall||combo.stage!=='return')return false;
+// Recalculate the return pass at the instant of release: a run planned before
+// the first pass can no longer be assumed reachable at the second pass.
+export function reachableReturnTarget(g,combo){
+ if(!combinationValid(g,combo)||g.ball.owner!==combo.wall||combo.stage!=='return')return null;
  const {wall,runner,target}=combo,dir=g.direction(combo.side);
- if(d(wall,runner)>34||d(wall,runner)<3.5)return false;
- if((target.x-wall.x)*dir<1||g.isOffside(wall,runner))return false;
- const enemy=g.nearest(1-combo.side,target.x,target.y,p=>p.i>0);
- if(enemy&&d(enemy,target)<2.2)return false;
- if(g.passingLane(wall,target)<2.6)return false;
- return true;
+ if(d(wall,runner)>34||d(wall,runner)<3.5||g.isOffside(wall,runner))return null;
+ const defenders=g.teams[1-combo.side].filter(p=>!p.red).map(p=>p.x*dir).sort((a,b)=>b-a);
+ const line=defenders[1];
+ const options=[1,.7,.45,.2,0].map(t=>({
+  x:cap(runner.x+(target.x-runner.x)*t,3,102),
+  y:cap(runner.y+(target.y-runner.y)*t,3,65)
+ }));
+ let winner=null,highest=-Infinity;
+ for(const point of options){
+  if((point.x-wall.x)*dir<1||d(wall,point)<3.5||d(wall,point)>33)continue;
+  if(line!==undefined&&point.x*dir>52.5&&point.x*dir>line+1.2)continue;
+  const flight=cap(d(wall,point)/47,.26,1.32);
+  // The receiver moves during the flight. No instant relocation.
+  if(d(runner,point)>5.1*(flight+.13)+1.0)continue;
+  const enemy=g.nearest(1-combo.side,point.x,point.y,p=>p.i>0&&!p.red);
+  const free=enemy?d(enemy,point):20;
+  const lane=g.passingLane(wall,point);
+  if(free<2.65||lane<2.6)continue;
+  const score=Math.min(12,free)*.6+Math.min(lane,9)*.7+
+   (point.x-wall.x)*dir*.16-d(runner,point)*.32;
+  if(score>highest){winner=point;highest=score}
+ }
+ return winner;
+}
+export function returnPassViable(g,combo){
+ const target=reachableReturnTarget(g,combo);
+ if(!target)return false;
+ combo.target=target;return true;
 }
 export function combinationTarget(g,p){
  const c=g.combo;
