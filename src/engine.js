@@ -207,7 +207,7 @@ export class MatchEngine{
   const closest=[null,null],laneTargets=[null,null];
   // Each side pursues an unowned ball physically, rather than waiting for a
   // nearby scripted reception or teleporting the recovery.
-  const recovering=!owner&&!this.restart&&!this.ball.flight;
+  const recovering=!owner&&!this.restart&&!this.ball.flight&&!this.ball.loose;
   const recoverers=[0,1].map(side=>recovering?this.nearest(side,bx,by,p=>p.i!==0):null);
   for(let side=0;side<2;side++){
    if(side===B)continue;
