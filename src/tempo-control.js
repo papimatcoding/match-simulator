@@ -76,7 +76,7 @@ export function findSpaceRun(g,p,owner,base){
   bestScore=score;best=point;
  }
  if(!best)return null;
- return {x:clamp(base.x*.38+best.x*.62,3,102),
+ return {x:onside(base.x*.38+best.x*.62),
   y:clamp(base.y*.38+best.y*.62,3,65),
   intent:wide?'Atacar carril libre y ofrecer pase al espacio':'Aparecer entre líneas sin balón'};
 }
