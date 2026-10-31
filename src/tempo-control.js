@@ -7,11 +7,11 @@ const outfield = p=>p.i!==0&&!p.red;
 export function decisionDelay(g,p){
  const rival=g.nearest(1-p.side,p.x,p.y,outfield);
  const gap=rival?distance(p,rival):20;
- let wait=g.random(.18,.40);
- if(gap<3.5)wait*=.72;
- else if(gap>8)wait*=1.12;
- if(Math.abs(g.goalX(p.side)-p.x)<20)wait*=.82;
- return clamp(wait/g.tactic(p.side).tempo,.10,.52);
+ let wait=g.random(.30,.66);
+ if(gap<3.5)wait*=.68;
+ else if(gap>8)wait*=1.08;
+ if(Math.abs(g.goalX(p.side)-p.x)<20)wait*=.85;
+ return clamp(wait/g.tactic(p.side).tempo,.17,.78);
 }
 
 // The preferred touch is a TARGET for the ball carrier, not a position update.
