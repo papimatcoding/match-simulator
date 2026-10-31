@@ -1,3 +1,4 @@
+import {technicalProfile} from './attributes.js?v=0.5.7';
 // 2026/27 roster snapshots from club/federation websites; XI and ratings are demo estimates.
 // Players encoded as "number|name". Positions come from the declared 4-3-3 / 4-2-3-1 / 3-5-2 template.
 const R = (str) => str.split(';').map(item => {const [number,name] = item.trim().split('|');return {number:Number(number),name};});
@@ -146,9 +147,9 @@ export function buildLineup(team, side){
  const slots=SLOTS[team.formation],overalls=STARTING_OVR[team.id];
  if(!overalls||overalls.length!==team.players.length)throw Error('Missing or invalid individual ratings for '+team.id);
  return team.players.map((p,i)=>{
-  const role=slots[i][0],rating=overalls[i];
+  const role=slots[i][0],rating=overalls[i],skills=estimatedSkills(p.name,role,rating);
   return {id:side+'-'+i,side,i,name:p.name,number:p.number,role,
-   anchor:{x:slots[i][1],y:slots[i][2]},rating,skills:estimatedSkills(p.name,role,rating),
+   anchor:{x:slots[i][1],y:slots[i][2]},rating,skills,technical:technicalProfile({rating,role,skills}),
    x:0,y:0,fx:0,fy:0,face:0,energy:1,card:false};
  });
 }
@@ -196,8 +197,9 @@ export function buildBench(team,side){
  return raw.map((entry,i)=>{
  const [num,name,role]=entry.split('|');let number=Number(num);while(taken.has(number))number++;taken.add(number);
  const rating=BENCH_OVR[team.id]?.[i]??Math.max(68,team.rating-6);
+ const skills=estimatedSkills(name,role,rating);
  return {id:`${side}-bench-${i}`,side,i:11+i,name,number,role,group:group(role),
- anchor:{x:48,y:34},rating,skills:estimatedSkills(name,role,rating),
+ anchor:{x:48,y:34},rating,skills,technical:technicalProfile({rating,role,skills}),
  x:52.5,y:34,fx:52.5,fy:34,energy:1,card:false,red:false};
  });
 }
