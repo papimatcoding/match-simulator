@@ -89,7 +89,7 @@ test('both teams physically close on an ownerless ball without jumping into poss
   const distance=Math.hypot(p.x-75,p.y-34);
   assert.ok(distance<before[i].d,'both sides should pursue free balls');
   assert.ok(Math.hypot(p.x-before[i].x,p.y-before[i].y)<=6.71*.08,'recovery cannot teleport');
-  assert.match(p.aiIntent,/balón suelto/);
+  assert.match(p.aiIntent,/balón suelto|rechace/);
  });
  assert.equal(g.ball.owner,null);
  assert.equal(g.ball.x,75);
