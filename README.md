@@ -1,10 +1,10 @@
-# MatchLab 0.5.5 — Ocasiones, paredes y recuperación del balón
+# MatchLab 0.5.6 — Ritmo de partido, duelos colectivos y decisiones de entrenador
 
 
 
 
 
-Laboratorio independiente del proyecto FUERA DE GUIÓN. Selección de dos equipos y simulación 11 contra 11 en Canvas 2D con 300 segundos de duración real aproximada a velocidad 1×.
+Laboratorio independiente del proyecto FUERA DE GUIÓN. Selección de dos equipos y simulación 11 contra 11 en Canvas 2D con 400 segundos de duración real aproximada a velocidad 1×.
 
 ## Arranque
 
