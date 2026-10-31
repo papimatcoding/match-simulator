@@ -26,7 +26,7 @@ export function recoveryAssignments(g){
   // Primary + secondary challenge; other players keep their team shape.
   sorted.slice(0,2).forEach(({p},i)=>{
    const target=i===0?predicted:{x:cap(ball.x,2,103),y:cap(ball.y,2,66)};
-   result.set(p,{x:target.x,y:target.y,intent:i===0?'Disputar balón dividido':'Apoyar la disputa y competir por el segundo balón',kind:i===0?'challenge':'second'});
+   result.set(p,{x:target.x,y:target.y,intent:i===0?'Disputar balón suelto':'Apoyar disputa por balón suelto y competir por el segundo balón',kind:i===0?'challenge':'second'});
   });
   // Cover the goal-side second ball without dragging the full defensive line.
   const third=sorted[2]?.p;
