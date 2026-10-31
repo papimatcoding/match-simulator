@@ -21,7 +21,7 @@ export function technicalProfile(player,overrides=null){
  }
  const foot=attrs.preferredFoot||'right';
  if(!['right','left','both'].includes(foot))throw Error('Invalid preferredFoot');
- return {...attrs,preferredFoot:foot,origin:overrides||player.technical?'custom':'model_estimate'};
+ return {...attrs,preferredFoot:foot,origin:(overrides||player.technical?.origin==='custom')?'custom':'model_estimate'};
 }
 export function makeFictionalProfile({rating=70,role='CM',skills={},technical={}}={}){
  const player={rating,role,skills};
