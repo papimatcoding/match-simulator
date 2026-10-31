@@ -1,8 +1,8 @@
-import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.5.0';
-import {MatchEngine} from './engine.js?v=0.5.0';
-import {PitchRenderer} from './render.js?v=0.5.0';
-import {TACTICS,defaultTactic} from './tactics.js?v=0.5.0';
-import {ROLES,eligibleRoles,ROLE_FOCUS} from './roles.js?v=0.5.0';
+import {LEAGUES,TEAMS,RATINGS_REVISION} from './teams.js?v=0.5.1';
+import {MatchEngine} from './engine.js?v=0.5.1';
+import {PitchRenderer} from './render.js?v=0.5.1';
+import {TACTICS,defaultTactic} from './tactics.js?v=0.5.1';
+import {ROLES,eligibleRoles,ROLE_FOCUS} from './roles.js?v=0.5.1';
 const $=q=>document.querySelector(q);
 // The displayed revision proves which ratings dataset the browser has loaded.
 const revisionLabel=document.getElementById('ratings-revision');
@@ -83,7 +83,8 @@ function refreshAI(){
  const p=game.selectedPlayer||game.ball.owner||game.teams[0][9];if(!p)return;
  by('ai-inspector').innerHTML=`<strong>${esc(p.name)} #${p.number}</strong>
  <span>${esc(roleLabel(p))} · ${proficiency(p)} · ${esc(p.aiFocus||'equilibrado')}</span>
- <span>Objetivo: ${esc(p.aiIntent||'Mantener posición')}</span>
+ <span>Fase colectiva: ${esc(game.collectivePhase(p.side).label)} · ${esc(game.collectivePhase(p.side).zone)}</span>
+  <span>Objetivo: ${esc(p.aiIntent||'Mantener posición')}</span>
  <span>Última decisión: ${esc(p.aiLastChoice||'—')}</span>
  <small>${esc(p.aiReason||'En espera de información')}</small>`;
 }
@@ -94,11 +95,11 @@ by('continue').onclick=()=>{if(game?.status==='halftime'){game.resumeHalf();runn
 for(const x of document.querySelectorAll('.tab'))x.addEventListener('click',()=>{tab=x.dataset.tab;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.tabpane').forEach(p=>show(p,p.id==='pane-'+tab));refresh(true)});
 function lineStat(title,a,b,suffix='',max=null){const total=max||Math.max(1,a+b);const f=clampNum(a/total*100);return `<div class="statsRow"><div class="statsLabel"><span>${a}${suffix}</span><small>${title}</small><span>${b}${suffix}</span></div><div class="bartrack"><div class="fillH" style="width:${f}%"></div><div class="fillA" style="width:${100-f}%"></div></div></div>`}
 const clampNum=x=>Math.min(100,Math.max(0,x));
-function statHtml(){const [a,b]=game.stats,p=game.possessionPct;const safePct=s=>s.passes?Math.round(s.completed/s.passes*100):0;return `<div class="stats-head">${lineStat('Posesión',p,100-p,'%')}${lineStat('Remates',a.shots,b.shots)}${lineStat('A puerta',a.onTarget,b.onTarget)}${lineStat('xG',+a.xg.toFixed(2),+b.xg.toFixed(2))}${lineStat('Pases completados',a.completed,b.completed)}${lineStat('Paredes iniciadas',game.patterns[0].started,game.patterns[1].started)}${lineStat('Paredes completadas',game.patterns[0].completed,game.patterns[1].completed)}${lineStat('Precisión pase',safePct(a),safePct(b),'%')}${lineStat('Córners',a.corners,b.corners)}${lineStat('Saques de banda',a.throwIns,b.throwIns)}${lineStat('Faltas',a.fouls,b.fouls)}${lineStat('Cambios',a.substitutions,b.substitutions)}${lineStat('Fueras de juego',a.offsides,b.offsides)}${lineStat('Amarillas',a.yellows,b.yellows)}${lineStat('Paradas',a.saves,b.saves)}</div><p class="statsFoot">Valores de acciones simuladas. Las paredes son secuencias de pase, devolución y desmarque; se cancelan si se pierde la posesión. xG estimado del laboratorio, no una métrica oficial.</p>`}
+function statHtml(){const [a,b]=game.stats,p=game.possessionPct;const safePct=s=>s.passes?Math.round(s.completed/s.passes*100):0;return `<div class="stats-head">${lineStat('Posesión',p,100-p,'%')}${lineStat('Remates',a.shots,b.shots)}${lineStat('A puerta',a.onTarget,b.onTarget)}${lineStat('xG',+a.xg.toFixed(2),+b.xg.toFixed(2))}${lineStat('Pases completados',a.completed,b.completed)}${lineStat('Paredes iniciadas',game.patterns[0].started,game.patterns[1].started)}${lineStat('Paredes completadas',game.patterns[0].completed,game.patterns[1].completed)}${lineStat('Recuperaciones tras contrapresión',game.collectiveStats[0].counterpressRecoveries,game.collectiveStats[1].counterpressRecoveries)}${lineStat('Precisión pase',safePct(a),safePct(b),'%')}${lineStat('Córners',a.corners,b.corners)}${lineStat('Saques de banda',a.throwIns,b.throwIns)}${lineStat('Faltas',a.fouls,b.fouls)}${lineStat('Cambios',a.substitutions,b.substitutions)}${lineStat('Fueras de juego',a.offsides,b.offsides)}${lineStat('Amarillas',a.yellows,b.yellows)}${lineStat('Paradas',a.saves,b.saves)}</div><p class="statsFoot">Valores de acciones simuladas. Las paredes son secuencias de pase, devolución y desmarque; se cancelan si se pierde la posesión. xG estimado del laboratorio, no una métrica oficial.</p>`}
 function refresh(force=false){if(!game)return;by('score-home').textContent=game.stats[0].goals;by('score-away').textContent=game.stats[1].goals;by('clock').textContent=game.clock;by('half-tag').textContent=game.half===1?'1.ª PARTE':'2.ª PARTE';by('playtag').textContent=game.phase.toUpperCase().replace('POSESION','POSESIÓN');
   by('score-home-meta').textContent=TACTICS[game.tactics[0]].label;
   by('score-away-meta').textContent=TACTICS[game.tactics[1]].label;
-  by('tactic-state').textContent=game.clubs.map((club,side)=>`${side?'VISITANTE':'LOCAL'}: ${game.tactic(side).phase}`).join(' · ');
+  by('tactic-state').textContent=game.clubs.map((club,side)=>`${side?'VISITANTE':'LOCAL'}: ${game.collectivePhase(side).label} (${game.collectivePhase(side).zone})`).join(' · ');
  if(game.toastTTL>0){show(by('ticker'),true);by('ticker').textContent=game.toast}else show(by('ticker'),false);
  if(force||game.events.length!==lastEv){const hadSub=game.events.slice(lastEv).some(e=>e.type==='substitution');lastEv=game.events.length;
   if(hadSub)by('ingame-lineups').innerHTML=game.clubs.map((team,side)=>`<div class="mini-lineup"><header>${esc(team.name)} · Cambios ${game.subsUsed[side]}/3</header>${game.teams[side].map(p=>`<div><b>${p.number}</b><span>${esc(p.name)}</span></div>`).join('')}</div>`).join('');const filtered=game.events.filter(e=>e.type!=='pass'&&e.type!=='loose'&&e.type!=='start').slice(-70).reverse();by('feed').innerHTML=filtered.length?filtered.map(e=>`<div class="event ${e.type}"><b>${e.minute}'</b><span class="evtext">${esc(e.description)}</span></div>`).join(''):`<div class="event empty">El encuentro está a punto de comenzar.</div>`;}

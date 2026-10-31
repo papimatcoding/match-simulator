@@ -1,4 +1,4 @@
-# MatchLab 0.5 — Inteligencia colectiva y paredes
+# MatchLab 0.5.1 — Transiciones colectivas en 2D
 
 
 
@@ -130,3 +130,11 @@ Las reglas de decisión de MatchLab son aproximaciones futbolísticas propias, n
 - Se conserva el parche 0.4.1 de plantillas y sustituciones y el 0.4.2 de decisiones contextuales.
 
 **Límites conocidos:** las paredes representan una primera coordinación ofensiva explícita, no un modelo táctico profundo de todos los jugadores. La precisión estadística de los partidos necesita continuar calibrándose y los esquemas de plantillas no se sincronizan en tiempo real.
+
+## 0.5.1 — Primera etapa del motor colectivo 2D
+- Cuatro fases compartidas según posesión y tiempo: ataque organizado, transición ofensiva, defensa organizada y transición defensiva. Los objetivos se calculan por tick, sin teletransportes.
+- La presión tras pérdida incorpora hasta tres jugadores próximos para planes agresivos, mientras el resto repliega; la táctica defensiva prioriza un primer temporizador y protección central. Los centrales no persiguen indiscriminadamente.
+- Tras recuperar, atacantes rompen al espacio, mediocampistas acompañan y el pivote protege. Las carreras respetan la línea de fuera de juego. En ataque organizado desde campo propio, pivote y centrales dan salida; en defensa organizada se ajusta la compactación.
+- La barra táctica y «Analizar IA» muestran fases y zonas; las recuperaciones rápidas tras pérdida se cuentan solo si la posesión cambia realmente dentro de la ventana y a menos de 22 metros.
+- Las jugadas a balón parado reinician el estado colectivo. Los ratings siguen siendo revisión 0.5.0, sin cambios de atributos.
+- Próximos pasos: lectura predictiva de líneas de pase, coberturas y calibración con partidos reales. El motor es heurístico y no reproduce código propietario de EA.

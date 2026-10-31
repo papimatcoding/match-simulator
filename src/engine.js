@@ -1,8 +1,9 @@
-import {buildLineup,buildBench} from './teams.js?v=0.5.0';
-import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.0';
-import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.0';
-import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.0';
-import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.0';
+import {buildLineup,buildBench} from './teams.js?v=0.5.1';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.1';
+import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.1';
+import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.1';
+import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.1';
+import {resetCollective,onPossessionChange,getCollectivePhase,pressingAssignments,collectiveTarget} from './collective.js?v=0.5.1';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -21,6 +22,7 @@ export class MatchEngine{
   this.ball={x:52.5,y:34,owner:null,flight:null};this.attackPasses=0;
    this.combo=null;this.comboCooldown=0;this.patterns=[{started:0,completed:0},{started:0,completed:0}];
   this.time=0;this.realTime=0;this.half=1;this.status='preview';this.phase='kickoff';
+   this.collectiveStats=[{regains:0,counterpressRecoveries:0},{regains:0,counterpressRecoveries:0}];resetCollective(this,0);
   this.carrier=null;this.possession=0;this.decision=1;this.restart=null;this.lastPass=null;
   this.toast='';this.toastTTL=0;this.goalFlash=0;this.isSetPiece=false;this.sequence=0;this.offsideMark=null;this.pendingCornerHeader=null;this.pendingPeriod=null;this.periodStart=null;
   this.reposition(0,true);
@@ -28,6 +30,8 @@ export class MatchEngine{
  random(a,b){return a+(b-a)*this.rng()}
  isClearChance(p,q){return isClearChance(this,p,q)}
  passingLane(from,to){return passingLane(this,from,to)}
+ collectivePhase(side){return getCollectivePhase(this,side)}
+ collectivePressers(side){return pressingAssignments(this,side,this.ball)}
  setPlayerRole(side,index,key,focus='equilibrado'){const p=this.teams[side]?.[index];if(!p||!eligibleRoles(p.role).includes(key))return false;assignRole(p,key,focus);return true}
  diagnose(reason,player=null){this.diagnostics.push({time:Math.round(this.time/60*10)/10,reason,player:player?.name||null});if(this.diagnostics.length>90)this.diagnostics.shift()}
   tactic(side){return tacticalState(this.tactics[side],this.time/60,this.stats[side].goals-this.stats[1-side].goals)}
@@ -52,7 +56,7 @@ export class MatchEngine{
  isActive(p){return !p.red}
  nearest(side,x,y,filter=()=>true){let best=null,d=1e9;for(const p of this.teams[side])if(!p.red&&filter(p)){const v=hypot(p.x-x,p.y-y);if(v<d){best=p;d=v}}return best}
  keeper(side){return this.teams[side][0]}
- hold(p){if(this.possession!==p.side)this.attackPasses=0;this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.phase='posesion';this.decision=this.random(.40,.88)/this.tactic(p.side).tempo;this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null;
+ hold(p){if(this.possession!==p.side){onPossessionChange(this,p.side);this.attackPasses=0}this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.phase='posesion';this.decision=this.random(.40,.88)/this.tactic(p.side).tempo;this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null;
   this.stallWatch={id:p.id,x:p.x,y:p.y,seconds:0};p.aiLastChoice='Controlar balón';p.aiReason='Evaluar compañeros, rivales y espacios';
   const c=this.combo;
   if(c){
@@ -72,6 +76,7 @@ export class MatchEngine{
  kickoff(side){this.lastPass=null;this.restartAt('kickoff',side,{x:52.5,y:34},1.15)}
  restartAt(type,side,spot,wait=1.8){
   this.ballFree();this.lastPass=null;this.combo=null;
+  this.possession=side;resetCollective(this,side);
   this.ball.flight=null;this.ball.x=clamp(spot.x,0,105);this.ball.y=clamp(spot.y,0,68);
   this.restart={type,side,spot:{x:this.ball.x,y:this.ball.y},wait};this.restart.kickerId=this.selectKicker(this.restart)?.id;
   const setKicker=this.kicker(this.restart);if(setKicker){setKicker.x=clamp(spot.x-this.direction(side)*1.2,1,104);setKicker.y=clamp(spot.y,1,67)}
@@ -168,7 +173,7 @@ export class MatchEngine{
    if(side===B)continue;
    const sorted=this.teams[side].filter(p=>p.i!==0&&!p.red)
     .map(p=>({p,d:hypot(p.x-bx,p.y-by)})).sort((a,b)=>a.d-b.d);
-   closest[side]=sorted.slice(0,this.tactic(side).press>=1.02?2:1).map(z=>z.p);
+   closest[side]=pressingAssignments(this,side,{x:bx,y:by});
   }
   for(let side=0;side<2;side++){
    const dir=this.direction(side),team=this.teams[side],attacking=side===B,tactic=this.tactic(side);
@@ -282,11 +287,15 @@ export class MatchEngine{
       p.aiIntent=cover.intent;
      }
     }
+    if(!this.restart&&p!==owner&&p.i>0){
+     const collective=collectiveTarget(this,p,target,this.collectivePhase(side),pressers);
+     target={x:collective.x,y:collective.y};if(collective.intent)p.aiIntent=collective.intent;
+    }
     p.fx=clamp(target.x,2,103);p.fy=clamp(target.y,2,66);
     p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
     const pressureStyle=tactic.press;
     const delta=hypot(p.fx-p.x,p.fy-p.y);
-    const speed=p.i===0?2.5:(p===owner?3.5:pressers[0]===p?6.0*pressureStyle:pressers[1]===p?5.7*pressureStyle:5.15)*(.75+p.skills.pace/300)*(.75+.25*p.energy);
+    const speed=p.i===0?2.5:(p===owner?3.5:pressers[0]===p?6.0*pressureStyle:pressers[1]===p?5.7*pressureStyle:pressers[2]===p?5.4*pressureStyle:5.15)*(.75+p.skills.pace/300)*(.75+.25*p.energy);
     if(delta>.01){const step=Math.min(delta,speed*dt);p.x+=step*(p.fx-p.x)/delta;p.y+=step*(p.fy-p.y)/delta}
    }
   }

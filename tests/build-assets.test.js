@@ -4,8 +4,8 @@ import {readFileSync} from 'node:fs';
 import {TEAMS,buildLineup,RATINGS_REVISION} from '../src/teams.js';
 const file = path => readFileSync(new URL(path,import.meta.url),'utf8');
 test('published module graph busts cached ratings from prior builds', () => {
- const version = '0.5.0';
- assert.equal(RATINGS_REVISION,version);
+ const version = '0.5.1';
+ assert.equal(RATINGS_REVISION,'0.5.0');
  assert.match(file('../index.html'), /src\/app\.js\?v=0\.5\.0/);
  assert.match(file('../src/app.js'), /\.\/teams\.js\?v=0\.5\.0/);
  assert.match(file('../src/app.js'), /\.\/engine\.js\?v=0\.5\.0/);
@@ -35,10 +35,10 @@ test('LaLiga completa y escalones de calidad para pruebas',()=>{
 });
 
 test('tactical presets are imported as a versioned module',()=>{
- assert.ok(file('../src/app.js').includes('tactics.js?v=0.5.0'));
- assert.ok(file('../src/engine.js').includes('tactics.js?v=0.5.0'));
- assert.ok(file('../src/engine.js').includes('roles.js?v=0.5.0'));
- assert.ok(file('../src/app.js').includes('roles.js?v=0.5.0'));
+ assert.ok(file('../src/app.js').includes('tactics.js?v=0.5.1'));
+ assert.ok(file('../src/engine.js').includes('tactics.js?v=0.5.1'));
+ assert.ok(file('../src/engine.js').includes('roles.js?v=0.5.1'));
+ assert.ok(file('../src/app.js').includes('roles.js?v=0.5.1'));
  assert.match(file('../index.html'),/id="tactic-home"/);
  assert.match(file('../index.html'),/id="live-tactic-home"/);
  assert.match(file('../index.html'),/id="ai-inspector"/);
@@ -47,17 +47,19 @@ test('tactical presets are imported as a versioned module',()=>{
 test('substitution break has a visible card and its own versioned asset graph',()=>{
  assert.match(file('../index.html'),/id="sub-moment"/);
  assert.ok(file('../src/app.js').includes('subHold=2.85'));
- assert.ok(file('../src/app.js').includes('0.5.0'));
- assert.ok(file('../src/engine.js').includes('0.5.0'));
+ assert.ok(file('../src/app.js').includes('0.5.1'));
+ assert.ok(file('../src/engine.js').includes('0.5.1'));
 });
 
 test('situational intelligence is loaded from versioned decision module',()=>{
- assert.ok(file('../src/engine.js').includes('decisions.js?v=0.5.0'));
- assert.ok(file('../index.html').includes('src/app.js?v=0.5.0'));
+ assert.ok(file('../src/engine.js').includes('decisions.js?v=0.5.1'));
+ assert.ok(file('../index.html').includes('src/app.js?v=0.5.1'));
 });
 
 test('coordinated combination module and match statistics are visible',()=>{
- assert.ok(file('../src/engine.js').includes('combinations.js?v=0.5.0'));
+ assert.ok(file('../src/engine.js').includes('combinations.js?v=0.5.1'));
+ assert.ok(file('../src/engine.js').includes('collective.js?v=0.5.1'));
+ assert.ok(file('../src/app.js').includes('Fase colectiva:'));
  assert.ok(file('../src/app.js').includes('Paredes iniciadas'));
  assert.ok(file('../src/app.js').includes('Paredes completadas'));
 });
