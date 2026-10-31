@@ -6,7 +6,7 @@ import {MatchEngine} from '../src/engine.js';
 const club=id=>TEAMS.find(x=>x.id===id);
 const styles=['presion','defensiva','equilibrada','tiki_taka','ofensiva'];
 const round=(x,n=1)=>+x.toFixed(n);
-const result={version:'0.5.5',seedFormula:'seed*157',clubs:['barca','getafe'],gamesPerTactic:12,tactics:{}};
+const result={version:'0.5.6',seedFormula:'seed*157',clubs:['barca','getafe'],gamesPerTactic:12,tactics:{}};
 for(const tactic of styles){
  const s={passByLength:Object.fromEntries(['short','medium','long'].map(k=>[k,{attempted:0,completed:0}])),passByPressure:Object.fromEntries(['tight','moderate','free'].map(k=>[k,{attempted:0,completed:0}])),xgBins:Object.fromEntries(['low','medium','high'].map(k=>[k,{shots:0,xg:0,goals:0}])),offsideFlags:0,awayThrows:0,awayOffsides:0,looseExits:0,flightInterceptions:0,groundTackles:0,groundTurnovers:0,games:0,shots:0,goals:0,onTarget:0,xg:0,passes:0,completed:0,interceptions:0,regains:0,quick:0,loose:0,offsides:0,corners:0,throwIns:0,passExits:0,fouls:0,saves:0,patterns:0,patternsCompleted:0,patternAborts:{lost:0,blocked:0,timeout:0,restart:0,reception:0},finalThirdPassAttempts:0,finalThirdPassCompleted:0,shotsAfterPass:0,passLength:0,progressive:0,backward:0,short:0,passAttempts:0,orientedControls:0,attackingSamples:0,spaceRunSamples:0,maxIdle:0,possession:0,timePhases:{restart:0,flight:0,loose:0,possessed:0,free:0},shapeSamples:0,crowdedPairs:0,defensiveWidth:0,defensiveSamples:0,unphysicalPlayers:0,magneticPasses:0,illegalCompletions:0,finished:0};
  for(let seed=1;seed<=12;seed++){
@@ -142,5 +142,5 @@ for(const tactic of styles){
  assert.ok(s.completed/s.passes>.65&&s.completed/s.passes<.95,'pass success outside audit band '+tactic);
  assert.ok(s.loose>0,'no loose balls '+tactic);
 }
-console.log('MATCHLAB CHANCE CREATION + SPATIAL AUDIT 0.5.5: 60 complete seeded matches, spatial and xG-calibration metrics by tactic');
+console.log('MATCHLAB CHANCE CREATION + SPATIAL AUDIT 0.5.6: 60 complete seeded matches, spatial and xG-calibration metrics by tactic');
 console.log(JSON.stringify(result,null,2));
