@@ -1,0 +1,21 @@
+name: Validate MatchLab patches
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ["feature/**"]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test deterministic match engine
+        run: npm test
+      - name: Audit 60 matches with tactical and spatial metrics
+        run: npm run audit
