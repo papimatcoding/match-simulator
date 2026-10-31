@@ -54,7 +54,7 @@ test('attacking possession selects the open forward in the final third',()=>{
  owner.x=79;owner.y=34;forward.x=92;forward.y=34;
  backward.x=68;backward.y=20;
  for(const q of g.teams[0])if(q!==owner&&q!==forward&&q!==backward){q.x=34;q.y=9}
- for(const q of g.teams[1]){q.x=q.i===0?103:54;q.y=55}
+ for(const q of g.teams[1]){q.x=q.i===0?103:96;q.y=55}
  g.attackPasses=3;g.rng=()=>.5;
  const received=g.findReceiver(owner);
  assert.equal(received,forward);
