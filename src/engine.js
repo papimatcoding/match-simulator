@@ -1,10 +1,11 @@
-import {buildLineup,buildBench} from './teams.js?v=0.5.3';
-import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.3';
-import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.3';
-import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.3';
-import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.3';
-import {resetCollective,onPossessionChange,getCollectivePhase,pressingAssignments,collectiveTarget} from './collective.js?v=0.5.3';
-import {aimPass,interceptSegment,defensiveLaneTargets,flightAnticipationTarget,fieldExit} from './ball-intelligence.js?v=0.5.3';
+import {buildLineup,buildBench} from './teams.js?v=0.5.4';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.4';
+import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.4';
+import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.4';
+import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.4';
+import {resetCollective,onPossessionChange,getCollectivePhase,pressingAssignments,collectiveTarget} from './collective.js?v=0.5.4';
+import {aimPass,interceptSegment,defensiveLaneTargets,flightAnticipationTarget,fieldExit} from './ball-intelligence.js?v=0.5.4';
+import {decisionDelay,orientedFirstTouch,findSpaceRun} from './tempo-control.js?v=0.5.4';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -57,7 +58,7 @@ export class MatchEngine{
  isActive(p){return !p.red}
  nearest(side,x,y,filter=()=>true){let best=null,d=1e9;for(const p of this.teams[side])if(!p.red&&filter(p)){const v=hypot(p.x-x,p.y-y);if(v<d){best=p;d=v}}return best}
  keeper(side){return this.teams[side][0]}
- hold(p){if(this.possession!==p.side){onPossessionChange(this,p.side);this.attackPasses=0}this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.ball.loose=null;this.phase='posesion';this.decision=this.random(.40,.88)/this.tactic(p.side).tempo;this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null;
+ hold(p){if(this.possession!==p.side){onPossessionChange(this,p.side);this.attackPasses=0}this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.ball.loose=null;this.phase='posesion';this.decision=decisionDelay(this,p);p.aiEscape=null;this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null;
   this.stallWatch={id:p.id,x:p.x,y:p.y,seconds:0};p.aiLastChoice='Controlar balón';p.aiReason='Evaluar compañeros, rivales y espacios';
   const c=this.combo;
   if(c){
@@ -302,6 +303,10 @@ export class MatchEngine{
       if(support){target={x:support.x,y:support.y};p.aiIntent=support.intent}
       const coordinated=combinationTarget(this,p);
       if(coordinated){target={x:coordinated.x,y:coordinated.y};p.aiIntent=coordinated.intent}
+       else if(attacking&&owner){
+        const run=findSpaceRun(this,p,owner,target);
+        if(run){target={x:run.x,y:run.y};p.aiIntent=run.intent}
+       }
      }
      if(attacking&&owner&&p!==owner&&p.role==='ST'&&p!==this.combo?.runner&&
        (this.goalX(side)-owner.x)*dir<27){
@@ -481,7 +486,7 @@ export class MatchEngine{
   if(press<3&&this.rng()<.065){this.foul(p,nearest);return}
   if(press<2.5&&this.rng()<.12){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
   // A clear carrier may advance before making another choice.
-  if((quality.distance>36&&press>5&&this.rng()<.18)||(press>7&&this.rng()<.12)){this.decision=this.random(.38,.70)/this.tactic(side).tempo;return}
+  if((quality.distance>36&&press>5&&this.rng()<.18)||(press>7&&this.rng()<.12)){this.decision=this.random(.22,.46)/this.tactic(side).tempo;return}
   if(this.combo?.wall===p&&this.combo.stage==='return'){
    const c=this.combo;
    if(returnPassViable(this,c)){
@@ -681,7 +686,10 @@ export class MatchEngine{
     this.add('loose',f.side,`El envío de ${f.from.name} queda dividido.`,f.from);return;
    }
    recipient.x+=clamp(f.end.x-recipient.x,-.18,.18);recipient.y+=clamp(f.end.y-recipient.y,-.18,.18);
-   this.stats[f.side].completed++;this.hold(recipient);this.lastPass={from:f.from.name,to:recipient.id,side:f.side,time:this.time};
+   this.stats[f.side].completed++;this.hold(recipient);
+    recipient.aiEscape=orientedFirstTouch(this,recipient);
+    this.decision=Math.min(this.decision,.22/this.tactic(recipient.side).tempo);
+    this.lastPass={from:f.from.name,to:recipient.id,side:f.side,time:this.time};
    if(this.pendingCornerHeader===recipient.id)this.decision=.22;
   }
  }
