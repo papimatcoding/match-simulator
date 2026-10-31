@@ -176,3 +176,19 @@ Las reglas de decisión de MatchLab son aproximaciones futbolísticas propias, n
 No se mezcla con el simulador de carrera FUERA DE GUIÓN. Las mejoras son experimentales y no significan que el ritmo de juego esté calibrado frente a partidos profesionales.
 
 Ver [auditoría 0.5.5](docs/AUDIT-055.md).
+
+## MatchLab 0.5.6 — Ritmo táctico y disputas colectivas
+
+**Duración de referencia:** 45 minutos simulados por cada 200 segundos de juego visible: aproximadamente **3 minutos y 20 segundos por parte a 1×**, sin contar la pausa manual del descanso, el tiempo añadido ni las tarjetas de sustitución. El botón de velocidad sigue siendo una opción de visualización, no una regla táctica.
+
+- **Decisiones contextualizadas:** los poseedores sin presión pueden orientarse antes de soltar el balón; ante presión reaccionan antes. Ya no se acelera artificialmente cualquier control completado.
+- **Disputas móviles y libres:** dos futbolistas por equipo intentan llegar físicamente al balón y un tercero cubre un posible rechace. Todos los jugadores siguen siendo elegibles para ganar si llegan dentro de la distancia de contacto (1,40 m); nadie obtiene posesión por selección anticipada.
+- **Intercepciones reales:** corregido el atributo defensivo de `skills.defense` a `skills.tackle`. Un defensor solo puede intentar interceptar una vez por vuelo, con proximidad geométrica real, evitando el efecto magnético de múltiples sorteos por fotograma.
+- **Fatiga:** desgaste gradual vinculado al movimiento y al balón. El límite inferior de energía no se alcanza automáticamente en los primeros minutos.
+- **Cambios contextualizados:** cada entrenador decide por separado según cansancio, tarjeta y marcador. Máximo cinco sustituciones y tres ventanas de juego por equipo; el descanso no consume ventana. No se realizan cambios por obligación de equilibrar el número entre ambos equipos.
+- **Finales de periodo:** el motor deja un margen adicional acotado a ataques peligrosos y garantiza la conclusión de disparos y penaltis ya iniciados.
+- **Pruebas y métricas:** `npm test` y `npm run audit`, que comprueban duelos físicos, ventanas, tiempos por parte y estadísticas de 60 partidos.
+
+**Límites:** el banquillo actual sigue siendo un ejemplo editorial reducido; no se han implementado lesiones ni todos los protocolos arbitrales, ni un conjunto de estadísticas real de jugadores. Los tiros con rosca y la base de datos individual están previstos como sistemas posteriores. MatchLab sigue separado de FUERA DE GUIÓN.
+
+Ver [auditoría 0.5.6](docs/AUDIT-056.md).
