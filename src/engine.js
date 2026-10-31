@@ -1,11 +1,11 @@
-import {buildLineup,buildBench} from './teams.js?v=0.5.4';
-import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.4';
-import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.4';
-import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.4';
-import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.4';
-import {resetCollective,onPossessionChange,getCollectivePhase,pressingAssignments,collectiveTarget} from './collective.js?v=0.5.4';
-import {aimPass,interceptSegment,defensiveLaneTargets,flightAnticipationTarget,fieldExit} from './ball-intelligence.js?v=0.5.4';
-import {decisionDelay,orientedFirstTouch,findSpaceRun} from './tempo-control.js?v=0.5.4';
+import {buildLineup,buildBench} from './teams.js?v=0.5.5';
+import {defaultTactic,tacticalState,TACTICS} from './tactics.js?v=0.5.5';
+import {defaultRole,assignRole,eligibleRoles,roleTarget,roleBonus,safeOutlet,escapeDirection} from './roles.js?v=0.5.5';
+import {isClearChance,passingLane,supportTarget} from './decisions.js?v=0.5.5';
+import {combinationRate,chooseCombination,combinationValid,returnPassViable,combinationTarget,coverPassingLane} from './combinations.js?v=0.5.5';
+import {resetCollective,onPossessionChange,getCollectivePhase,pressingAssignments,collectiveTarget} from './collective.js?v=0.5.5';
+import {aimPass,interceptSegment,defensiveLaneTargets,flightAnticipationTarget,fieldExit} from './ball-intelligence.js?v=0.5.5';
+import {decisionDelay,orientedFirstTouch,findSpaceRun} from './tempo-control.js?v=0.5.5';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const hypot=(x,y)=>Math.hypot(x,y);
@@ -22,7 +22,7 @@ export class MatchEngine{
   this.benches=[buildBench(home,0),buildBench(away,1)];this.rosterHistory=this.teams.map((t,i)=>[...t,...this.benches[i]]);this.subsUsed=[0,0];this.subWindows=[56,68,79];this.subMoment=null;this.subMomentSerial=0;
   this.stats=[STATS(),STATS()];this.events=[];this.goals=[];
   this.ball={x:52.5,y:34,owner:null,flight:null,loose:null};this.attackPasses=0;
-   this.combo=null;this.comboCooldown=0;this.patterns=[{started:0,completed:0},{started:0,completed:0}];
+   this.combo=null;this.comboCooldown=0;this.patterns=[0,1].map(()=>({started:0,completed:0,aborted:{lost:0,blocked:0,timeout:0,restart:0,reception:0}}));
   this.time=0;this.realTime=0;this.half=1;this.status='preview';this.phase='kickoff';
    this.collectiveStats=[{regains:0,counterpressRecoveries:0},{regains:0,counterpressRecoveries:0}];resetCollective(this,0);
   this.carrier=null;this.possession=0;this.decision=1;this.restart=null;this.lastPass=null;
@@ -58,6 +58,11 @@ export class MatchEngine{
  isActive(p){return !p.red}
  nearest(side,x,y,filter=()=>true){let best=null,d=1e9;for(const p of this.teams[side])if(!p.red&&filter(p)){const v=hypot(p.x-x,p.y-y);if(v<d){best=p;d=v}}return best}
  keeper(side){return this.teams[side][0]}
+ abortCombo(reason='lost'){
+  if(!this.combo)return;
+  const key=Object.hasOwn(this.patterns[this.combo.side].aborted,reason)?reason:'lost';
+  this.patterns[this.combo.side].aborted[key]++;this.combo=null;
+ }
  hold(p){if(this.possession!==p.side){onPossessionChange(this,p.side);this.attackPasses=0}this.carrier=p;this.possession=p.side;this.ball.owner=p;this.ball.flight=null;this.ball.loose=null;this.phase='posesion';this.decision=decisionDelay(this,p);p.aiEscape=null;this.isSetPiece=false;this.ball.x=p.x;this.ball.y=p.y;this.lastPass=this.lastPass?.to===p.id?this.lastPass:null;
   this.stallWatch={id:p.id,x:p.x,y:p.y,seconds:0};p.aiLastChoice='Controlar balón';p.aiReason='Evaluar compañeros, rivales y espacios';
   const c=this.combo;
@@ -70,14 +75,14 @@ export class MatchEngine{
     this.add('combinationComplete',c.side,`¡Pared completada! ${c.wall.name} habilita la ruptura de ${p.name}.`,p);
     this.combo=null;
    }else if(p!==c.initiator||c.stage!=='wall'){
-    this.combo=null;
+    this.abortCombo(p.side!==c.side?'lost':'reception');
    }
   }
  }
  ballFree(){this.ball.owner=null;this.carrier=null;this.ball.loose=null}
  kickoff(side){this.lastPass=null;this.restartAt('kickoff',side,{x:52.5,y:34},1.15)}
  restartAt(type,side,spot,wait=1.8){
-  this.ballFree();this.lastPass=null;this.combo=null;
+  this.ballFree();this.lastPass=null;this.abortCombo('restart');
   this.possession=side;resetCollective(this,side);
   this.ball.flight=null;this.ball.loose=null;this.ball.x=clamp(spot.x,0,105);this.ball.y=clamp(spot.y,0,68);
   this.restart={type,side,spot:{x:this.ball.x,y:this.ball.y},wait};this.restart.kickerId=this.selectKicker(this.restart)?.id;
@@ -103,7 +108,7 @@ export class MatchEngine{
   return (this.goalX(attacking)-x)*dir<30 && (this.ball.owner!==null||this.ball.flight!==null);
  }
  finishPeriod(){
-  this.pendingPeriod=null;this.periodStart=null;this.ballFree();this.ball.flight=null;this.restart=null;this.combo=null;
+  this.pendingPeriod=null;this.periodStart=null;this.ballFree();this.ball.flight=null;this.restart=null;this.abortCombo('restart');
   if(this.half===1){this.status='halftime';this.add('half',-1,'Descanso. Los equipos cambiarán de campo.');}
   else{this.status='finished';this.add('end',-1,'Final del partido.');}
  }
@@ -120,7 +125,7 @@ export class MatchEngine{
   }
   if(this.ball.owner)this.stats[this.ball.owner.side].possSeconds+=dt;
   else if(this.ball.flight)this.stats[this.ball.flight.side].possSeconds+=dt*.8;
-  if(this.combo&&!combinationValid(this,this.combo))this.combo=null;
+  if(this.combo&&!combinationValid(this,this.combo))this.abortCombo(this.realTime>this.combo.expiry?'timeout':'lost');
   this.movePlayers(dt);
   if(this.restart){this.restart.wait-=dt;if(this.restart.wait<=0)this.executeRestart();return}
   if(this.ball.flight){this.updateFlight(dt);return}
@@ -200,6 +205,10 @@ export class MatchEngine{
   const B=owner?.side??this.ball.flight?.side??this.restart?.side??this.possession;
   // Press only with nearby players; the rest keep a zonal defensive structure.
   const closest=[null,null],laneTargets=[null,null];
+  // Each side pursues an unowned ball physically, rather than waiting for a
+  // nearby scripted reception or teleporting the recovery.
+  const recovering=!owner&&!this.restart&&!this.ball.flight&&!this.ball.loose;
+  const recoverers=[0,1].map(side=>recovering?this.nearest(side,bx,by,p=>p.i!==0):null);
   for(let side=0;side<2;side++){
    if(side===B)continue;
    const sorted=this.teams[side].filter(p=>p.i!==0&&!p.red)
@@ -329,6 +338,9 @@ export class MatchEngine{
      target={x:collective.x,y:collective.y};if(collective.intent)p.aiIntent=collective.intent;
      const intercept=flightAnticipationTarget(this,p,this.ball.flight)||laneTargets[side]?.get(p);
      if(intercept){target={x:intercept.x,y:intercept.y};p.aiIntent=intercept.intent}
+    }
+    if(recovering&&p===recoverers[side]){
+     target={x:bx,y:by};p.aiIntent='Acudir al balón suelto';
     }
     p.fx=clamp(target.x,2,103);p.fy=clamp(target.y,2,66);
     p.energy=clamp(p.energy-(p===owner?.02:.004)*dt,.52,1);
@@ -494,7 +506,7 @@ export class MatchEngine{
     p.aiReason='Tercer hombre rompe a espacio con corredor despejado';
     this.pass(p,c.runner,false,c.target);return
    }
-   this.combo=null;
+   this.abortCombo('blocked');
   }
   if(!this.combo&&this.realTime>=this.comboCooldown&&this.rng()<combinationRate(this.tactics[side])){
    const c=chooseCombination(this,p);
@@ -524,7 +536,7 @@ export class MatchEngine{
  findReceiver(p){
   const side=p.side,dir=this.direction(side),style=this.tactics[side],tactic=this.tactic(side);
   const defenderLine=this.teams[1-side].filter(z=>!z.red).map(z=>z.x*dir).sort((a,b)=>b-a)[1]??this.goalX(side)*dir;
-  const tiredOfCirculating=style==='tiki_taka'&&this.attackPasses>=4&&Math.abs(this.goalX(side)-p.x)<58;
+  const tiredOfCirculating=style==='tiki_taka'&&this.attackPasses>=3&&Math.abs(this.goalX(side)-p.x)<58;
   const options=this.teams[side].filter(q=>q!==p&&q.i!==0&&!q.red&&dist(q,p)>5&&dist(q,p)<43);
   if(!options.length)return null;
   const rated=options.map(q=>{
@@ -543,14 +555,21 @@ export class MatchEngine{
    const blindLane=lane<2.5?30:lane<4?13:0;
    // Possession prefers clean short angles; vertical sides can play into space.
    const attackZone=Math.abs(this.goalX(side)-q.x)<25;
-    const roleChance=attackZone?(q.role==='ST'?-7:['LW','RW','AM','CM'].includes(q.role)?7:0):0;
+    const roleChance=attackZone?(q.role==='ST'?5:['LW','RW','AM','CM'].includes(q.role)?7:0):0;
     const rolePreference=(tiredOfCirculating&&['LW','RW','ST','AM'].includes(q.role)&&progress>3?12:0)+roleBonus(this,q,'pass')*.8+(q.aiRole==='delantero_avanzado'&&progress>4?6:0)+
     (style==='tiki_taka'&&['organizador','falso_nueve','lateral_invertido'].includes(q.aiRole)?(Math.abs(this.goalX(side)-p.x)<35?3:9):0)+
     (style==='ofensiva'&&['extremo_interior','box_to_box','lateral_ofensivo'].includes(q.aiRole)&&progress>3?10:0)+
     (style==='defensiva'&&progress<0?7:0);
     const attackingWindow=attackZone&&free>3.4?Math.min(6,(q.skills.shot-70)*.45):0;
+    // Attack an unmarked final-third window without inventing a pass.
+    const finishWindow=style==='tiki_taka'&&this.attackPasses>=2&&
+     Math.abs(this.goalX(side)-p.x)<48&&
+     ['ST','LW','RW','AM','CM'].includes(q.role)&&
+     progress>1&&free>3.4&&lane>3.4&&!isOff&&
+     Math.abs(this.goalX(side)-q.x)<30?
+     clamp(14+(30-Math.abs(this.goalX(side)-q.x))*.3,0,21):0;
     const score=(progress>=0?progress*(style==='ofensiva'?.96:style==='tiki_taka'?(tiredOfCirculating?1.10:.64):style==='defensiva'?.73:.78)+3:progress*.37)+roleChance+attackingWindow+
-    Math.min(free,12)*.79+Math.min(lane,11)*1.08+rolePreference-
+    Math.min(free,12)*.79+Math.min(lane,11)*1.08+rolePreference+finishWindow-
     d*(style==='tiki_taka'?.38:style==='defensiva'?.27:.16)-inTraffic-blindLane-risky-
      (style==='tiki_taka'&&d>20?(d-20)*.9:0)-
     (progress< -10?5:0)-(isOff?(q.x*dir-Math.max(p.x*dir,defenderLine)<3.5?5+Math.max(0,p.skills.pass-65)*.25:90):0)+this.random(-2,2);
@@ -683,7 +702,11 @@ export class MatchEngine{
     const sideline=Math.min(this.ball.y,68-this.ball.y);
     const sideDrift=touch&&sideline<13?(this.ball.y<34?-1:1)*this.random(5.5,8.5):this.random(-1.8,1.8);
     this.ball.loose={vx:(f.end.x-f.start.x)/length*this.random(2.5,4.5),vy:(f.end.y-f.start.y)/length*3+sideDrift,lastSide:f.side,failedId:touch?recipient.id:null,age:0};
-    this.add('loose',f.side,`El envío de ${f.from.name} queda dividido.`,f.from);return;
+    this.add('loose',f.side,`El envío de ${f.from.name} queda dividido.`,f.from);
+    if(this.combo&&f.side===this.combo.side&&
+     ((this.combo.stage==='wall'&&f.to===this.combo.wall)||(this.combo.stage==='flight'&&f.to===this.combo.runner)))
+     this.abortCombo('reception');
+    return;
    }
    recipient.x+=clamp(f.end.x-recipient.x,-.18,.18);recipient.y+=clamp(f.end.y-recipient.y,-.18,.18);
    this.stats[f.side].completed++;this.hold(recipient);

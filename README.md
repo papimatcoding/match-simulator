@@ -1,4 +1,4 @@
-# MatchLab 0.5.4 — Ritmo contextual, control orientado y desmarques útiles
+# MatchLab 0.5.5 — Ocasiones, paredes y recuperación del balón
 
 
 
@@ -164,3 +164,15 @@ Las reglas de decisión de MatchLab son aproximaciones futbolísticas propias, n
 - Nuevos desmarques de extremos y mediapuntas hacia carriles libres, limitados por la segunda línea defensiva, distancia alcanzable, presión rival y separación entre compañeros.
 - Se reduce el tiempo de decisión tras recepción y la espera de conducción sin oposición, pero el reloj acelerado del motor sigue igual (18 s simulados / 1 s real).
 - Los parámetros son experimentales y deben compararse con 0.5.3 mediante auditoría de 60 partidos. No se integran guardados de FUERA DE GUIÓN.
+
+## MatchLab 0.5.5 — Creación de ocasiones verificable
+
+- El segundo pase de una pared se recalcula con la ubicación **actual** del corredor, distancia alcanzable durante el vuelo, defensa y línea del fuera de juego; si no se puede realizar, se cancela.
+- Las paredes canceladas ahora se separan por causa (interrupción, recepción, bloqueo, pérdida o timeout). La auditoría exige que cada pared iniciada se complete o se cancele exactamente una vez.
+- Tras circular en campo rival, el tiki-taka valora a compañeros libres en el último tercio y ya no penaliza por defecto a un delantero centro libre en zona de remate.
+- Los jugadores de ambos equipos **persiguen físicamente los balones sin dueño**, reduciendo posesiones muertas; velocidad y límites del campo siguen comprobándose.
+- Se añade auditoría de **60 partidos** que distingue intervalos con balón controlado, en vuelo, dividido, inmóvil sin dueño y en reanudación, así como pases al último tercio, tiros después de pases y causas de paredes fallidas.
+
+No se mezcla con el simulador de carrera FUERA DE GUIÓN. Las mejoras son experimentales y no significan que el ritmo de juego esté calibrado frente a partidos profesionales.
+
+Ver [auditoría 0.5.5](docs/AUDIT-055.md).

@@ -59,7 +59,7 @@ test('ratings influence ball retention and favour stronger clubs over repeated f
  const matches=Array.from({length:8},(_,i)=>play('barca','malaga',i*31+53));
  const homeShots=matches.reduce((n,m)=>n+m.stats[0].shots,0);
  const awayShots=matches.reduce((n,m)=>n+m.stats[1].shots,0);
- assert.ok(homeShots>awayShots,'dominant side should create more shots over eight seeds');
+ assert.ok(homeShots>awayShots,JSON.stringify({homeShots,awayShots,reason:'dominant side should create more shots over eight seeds'}));
  const totalGoals=matches.reduce((n,m)=>n+m.stats[0].goals+m.stats[1].goals,0);
  const totalCorners=matches.reduce((n,m)=>n+m.stats[0].corners+m.stats[1].corners,0);
  assert.ok(totalGoals>4&&totalGoals<52,'plausible aggregate goals');
