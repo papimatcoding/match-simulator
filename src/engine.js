@@ -431,7 +431,7 @@ export class MatchEngine{
       owner.x+=dx;owner.y+=dy;if(dx*dir>0)this.stats[owner.side].forwardCarryMeters+=dx*dir;
      }else owner.aiEscape=null}
    if(!owner.aiEscape&&remaining>12&&pressure>2.5){owner.x=clamp(owner.x+dir*dt*(2.0+owner.rating/90),2,103);owner.y=clamp(owner.y+Math.sin(this.realTime*.8+owner.i)*dt*.34,2,66)}
-   if(pressure<2.1&&this.rng()<dt*(.34+Math.max(0,front.skills.tackle-70)*.009)){
+   if(pressure<1.95&&this.rng()<dt*(.20+Math.max(0,front.skills.tackle-70)*.005)){
     this.ball.x=owner.x;this.ball.y=owner.y;
     if(this.rng()<.16)this.foul(owner,front);
     else if(Math.abs(owner.y-34)>25&&this.rng()<.42){this.clearance(front,owner.side)}
@@ -582,7 +582,7 @@ export class MatchEngine{
   }
   if(this.shouldShoot(p,quality)){p.aiLastChoice='Disparar';p.aiReason=`Ocasión xG ${quality.xg.toFixed(2)}, distancia ${quality.distance.toFixed(1)} m`;this.shoot(p);return}
   if(press<3&&this.rng()<.065){this.foul(p,nearest);return}
-  if(press<2.3&&this.rng()<.16){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
+  if(press<1.95&&this.rng()<.085){this.stats[1-side].interceptions++;this.add('tackle',1-side,`${nearest.name} gana el balón a ${p.name}.`,nearest);this.hold(nearest);return}
   // Once dribbling has started, resist aimless backpasses while the lane is open.
   if(p.aiEscape&&this.realTime<(p.aiCarryUntil||0)&&press>3.2&&
      (p.aiEscape.x-p.x)*this.direction(side)>1){
