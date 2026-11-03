@@ -13,11 +13,12 @@ export function chooseShot(g,player,quality,{penalty=false,freeKick=false,header
  const finesse=freeKick?(stats.curve>=82):finesseScore>.34&&d>=10&&d<=31;
  const style=finesse?'curl':powerful?'power':'drive';
  // Spin travels perpendicular to the shot: visible in the top-down pitch.
- const curviness=style==='curl'?cap(.6+(stats.curve-60)*.05,.55,2.65):0;
+ // Subtle curve rather than an arcade sideways jump (approx. <=1.0 pitch metre).
+ const curviness=style==='curl'?cap(.36+(stats.curve-80)*.029,.28,.97):0;
  const foot=stats.preferredFoot==='left'?-1:1;
  const side=Math.sign(player.y-34)||1;
  const spin=curviness*(side*foot*g.direction(player.side));
- const height=style==='curl'?.65:style==='power'?.45:.28;
+ const height=style==='curl'?.38:style==='power'?.34:.24;
  return {style,curve:spin,height,power:stats.shotPower,technique:stats.technique};
 }
 export function shotPoint(f,u){
