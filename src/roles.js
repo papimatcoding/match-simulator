@@ -16,6 +16,7 @@ export const ROLES={
  extremo:{label:'Extremo abierto',positions:['LW','RW'],family:'wing'},
  extremo_interior:{label:'Extremo interior',positions:['LW','RW'],family:'wing'},
  delantero_avanzado:{label:'Delantero avanzado',positions:['ST'],family:'striker'},
+ cazagoles:{label:'Cazagoles',positions:['ST'],family:'striker'},
  falso_nueve:{label:'Falso 9',positions:['ST'],family:'striker'},
  delantero_presion:{label:'Delantero presionante',positions:['ST'],family:'striker'}
 };
@@ -32,14 +33,20 @@ export function defaultRole(p,club){
  if(p.role==='LW'||p.role==='RW')return c==='posesion'?'extremo_interior':'extremo';
  return c==='posesion'?'falso_nueve':c==='presion'?'delantero_presion':'delantero_avanzado';
 }
+// Familiarity belongs to the PLAYER + EXACT ROLE, not to a generic OVR band.
 export function familiarity(p,key){
- const role=ROLES[key];if(!role)return 0;
- const native=role.positions.includes(p.role);
- const fit=role.family==='striker'?p.skills.shot:role.family==='wing'?p.skills.pace:
-  role.family==='midfield'?p.skills.pass:role.family==='keeper'||role.family==='back'?p.skills.tackle:
-  (p.skills.pace+p.skills.tackle)/2;
- const rating=p.rating||75;
- return native&&rating>=85&&fit>=82?2:native&&rating>=74&&fit>=67?1:0;
+ const role=ROLES[key];
+ if(!role||!role.positions.includes(p.role))return 0;
+ return Math.max(0,Math.min(2,Math.trunc(p.roleFamiliarity?.[key]??0)));
+}
+export function seedRoleFamiliarity(name,position){
+ const eligible=eligibleRoles(position);
+ if(!eligible.length)return {};
+ let hash=2166136261;for(const c of name+'|'+position)hash=Math.imul(hash^c.charCodeAt(0),16777619)>>>0;
+ const selected=eligible[hash%eligible.length];
+ // Illustrative synthetic profiles; not FC game ratings. High OVR alone
+ // never grants ++, nor a bonus in every available role.
+ return {[selected]:hash%13===0?2:1};
 }
 export function assignRole(p,key,focus='equilibrado'){
  const valid=eligibleRoles(p.role);
@@ -92,12 +99,17 @@ export function roleTarget(g,p,base,ball,attacking,owner){
   }else if(key==='falso_nueve'){
    if(Math.abs(gx-bx)<34){x=bx+dir*(9+4*gain)*attack;y=cap(34+(by-34)*.30,12,56);intent='Atacar el área tras enlazar la jugada'}
    else{x=bx-dir*(4+4*gain);y=cap(34+(by-34)*.55,9,59);intent='Bajar a recibir y liberar espacio'}
+   }else if(key==='cazagoles'){
+   const close=Math.abs(gx-bx)<33;
+   x=close?gx-dir*(9+2/gain):bx+dir*(12+2*gain)*attack;
+   y=cap(34+(by-34)*.25,12,56);
+   intent=close?'Cazagoles: atacar zona de remate':'Cazagoles: ofrecer ruptura corta';
   }else if(key==='delantero_avanzado'){
    x=bx+dir*(14+3*gain)*attack;y=cap(34+(p.i%2?-3:3),11,57);intent='Romper a la espalda de centrales';
   }else if(key==='delantero_presion'){
    x=bx+dir*10*attack;y=34+(p.i%2?-6:6);intent='Atacar área y preparar contrapresión';
   }
-  if(p!==owner&&['extremo','extremo_interior','delantero_avanzado','delantero_presion','box_to_box','mediapunta'].includes(key)){
+  if(p!==owner&&['extremo','extremo_interior','delantero_avanzado','cazagoles','delantero_presion','box_to_box','mediapunta'].includes(key)){
    const defenders=g.teams[1-p.side].filter(q=>!q.red).map(q=>q.x*dir).sort((a,b)=>b-a);
    const line=defenders[1];
    if(line!==undefined&&x*dir>52.5){
@@ -132,7 +144,7 @@ export function roleTarget(g,p,base,ball,attacking,owner){
 export function roleBonus(g,p,type){
  const key=p.aiRole,level=p.aiFamiliarity||0;
  if(type==='pass')return (['organizador','falso_nueve','mediapunta','pivote'].includes(key)?4:0)+level*1.3;
- if(type==='shot')return (['delantero_avanzado','extremo_interior','box_to_box'].includes(key)?4:0)+level*1.0;
+ if(type==='shot')return (['delantero_avanzado','cazagoles','extremo_interior','box_to_box'].includes(key)?4:0)+level*1.0;
  if(type==='defense')return (['pivote','central_anticipador','lateral_defensivo','delantero_presion'].includes(key)?3:0)+level*.8;
  return 0;
 }

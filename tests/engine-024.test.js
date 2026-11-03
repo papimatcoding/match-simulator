@@ -63,5 +63,5 @@ test('ratings influence ball retention and favour stronger clubs over repeated f
  const totalGoals=matches.reduce((n,m)=>n+m.stats[0].goals+m.stats[1].goals,0);
  const totalCorners=matches.reduce((n,m)=>n+m.stats[0].corners+m.stats[1].corners,0);
  assert.ok(totalGoals>4&&totalGoals<52,'plausible aggregate goals');
- assert.ok(totalCorners>16&&totalCorners<96,'corners within broad calibration bounds');
+ assert.ok(totalCorners>0&&totalCorners<96,'corners must occur but no longer be fabricated by wide shots: '+totalCorners);
 });

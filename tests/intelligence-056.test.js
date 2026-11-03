@@ -8,9 +8,9 @@ const club=id=>TEAMS.find(t=>t.id===id);
 const make=()=>{const g=new MatchEngine(club('barca'),club('getafe'),560);g.start();g.restart=null;return g};
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 
-test('1× runs each 45-minute half in 3–4 real minutes, with deterministic clock',()=>{
- assert.equal(MATCH_CLOCK_SCALE,13.5);
- assert.ok(2700/MATCH_CLOCK_SCALE>=180&&2700/MATCH_CLOCK_SCALE<=240);
+test('1× runs each 45-minute half in 2 real minutes, with deterministic clock',()=>{
+ assert.equal(MATCH_CLOCK_SCALE,22.5);
+ assert.ok(2700/MATCH_CLOCK_SCALE>=118&&2700/MATCH_CLOCK_SCALE<=122);
  const g=make(),t=g.time;g.update(.08);
  assert.ok(Math.abs(g.time-t-.08*MATCH_CLOCK_SCALE)<1e-8);
 });
