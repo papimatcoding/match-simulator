@@ -722,7 +722,7 @@ export class MatchEngine{
   this.phase=penalty?'penalti':freeKick?'falta directa':'disparo';
   this.add('shot',side,penalty?`${from.name} lanza el penalti.`:freeKick?`${from.name} ejecuta la falta directa.`:
    `${from.name} ${header?'cabecea':shot.style==='curl'?'busca la escuadra con rosca':shot.style==='power'?'arma un disparo potente':'remata'}.`,
-   from,{xg,shotStyle:shot.style,curve:shot.curve});
+   from,{xg,shotStyle:shot.style,curve:shot.curve,shootingDistance:d,penalty,freeKick,header});
  }
  clearance(by,lastSide){
   const start={x:this.ball.x,y:this.ball.y};const edge=start.y<34?-1:69;
