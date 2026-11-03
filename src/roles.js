@@ -32,14 +32,20 @@ export function defaultRole(p,club){
  if(p.role==='LW'||p.role==='RW')return c==='posesion'?'extremo_interior':'extremo';
  return c==='posesion'?'falso_nueve':c==='presion'?'delantero_presion':'delantero_avanzado';
 }
+// Familiarity belongs to the PLAYER + EXACT ROLE, not to a generic OVR band.
 export function familiarity(p,key){
- const role=ROLES[key];if(!role)return 0;
- const native=role.positions.includes(p.role);
- const fit=role.family==='striker'?p.skills.shot:role.family==='wing'?p.skills.pace:
-  role.family==='midfield'?p.skills.pass:role.family==='keeper'||role.family==='back'?p.skills.tackle:
-  (p.skills.pace+p.skills.tackle)/2;
- const rating=p.rating||75;
- return native&&rating>=85&&fit>=82?2:native&&rating>=74&&fit>=67?1:0;
+ const role=ROLES[key];
+ if(!role||!role.positions.includes(p.role))return 0;
+ return Math.max(0,Math.min(2,Math.trunc(p.roleFamiliarity?.[key]??0)));
+}
+export function seedRoleFamiliarity(name,position){
+ const eligible=eligibleRoles(position);
+ if(!eligible.length)return {};
+ let hash=2166136261;for(const c of name+'|'+position)hash=Math.imul(hash^c.charCodeAt(0),16777619)>>>0;
+ const selected=eligible[hash%eligible.length];
+ // Illustrative synthetic profiles; not FC game ratings. High OVR alone
+ // never grants ++, nor a bonus in every available role.
+ return {[selected]:hash%13===0?2:1};
 }
 export function assignRole(p,key,focus='equilibrado'){
  const valid=eligibleRoles(p.role);
