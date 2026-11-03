@@ -1,3 +1,15 @@
+# MatchLab 0.5.8 — Partido a 2 minutos por parte y progreso real
+
+Parche de jugabilidad basado en sesiones de prueba: se reduce la duración a unos **2 minutos por parte (1×)**, se introducen **conducciones hacia portería** si las opciones de pase solo retrasan la jugada, la presión defensiva busca contacto real, se desincentivan remates desde distancias absurdas y los cabezazos de córner solo se ejecutan cerca del área. Los **córneres por remate** exigen desvío real de portero y salida por línea de fondo; un disparo fuera nunca concede córner por azar. Los tiros con rosca usan una curva lateral moderada.
+
+**Roles individuales:** Base / Role+ / Role++ se asignan **por jugador y rol exacto**, no según tramos de media. Nuevo Cazagoles, compatible con Falso 9 y Delantero avanzado como opciones distintas. Inspirado en la diferencia entre rol, foco y familiaridad de FC 27, sin atribuir ratings oficiales a jugadores reales.
+
+**Integración:** el motor 0.5.8 es la base de **FUERA DE GUIÓN 11** para partidos nuevos. Los partidos antiguos siguen con sus presentadores anteriores.
+
+**Pruebas:** 118 tests y 60 partidos completos. El informe [AUDIT-058.md](docs/AUDIT-058.md) reconoce expresamente las limitaciones (menos pases por partido, baja frecuencia de córneres, calibración de la táctica ofensiva).
+
+---
+
 # MatchLab 0.5.7 — Ventaja, coberturas e inteligencia de tiro
 
 
