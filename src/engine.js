@@ -565,7 +565,16 @@ export class MatchEngine{
  }
  decide(p){if(p.red){this.ballFree();return}
   const side=p.side;
-  if(this.pendingCornerHeader===p.id){this.pendingCornerHeader=null;this.add('header',side,`${p.name} se eleva para cabecear el córner.`,p);this.shoot(p,false,false,true);return}
+  if(this.pendingCornerHeader===p.id){
+   this.pendingCornerHeader=null;
+   const headerQuality=this.shotQuality(p);
+   if(headerQuality.distance<23&&headerQuality.angleFactor>.25){
+    this.add('header',side,`${p.name} se eleva para cabecear el córner.`,p);
+    this.shoot(p,false,false,true);return;
+   }
+   // A short or poorly received corner must be controlled and played on,
+   // never turned into a forced header from the centre circle.
+  }
   const quality=this.shotQuality(p);
   const nearest=this.nearest(1-side,p.x,p.y,q=>q.i!==0),press=nearest?dist(p,nearest):25;
   if(this.isClearChance(p,quality)){
