@@ -19,9 +19,10 @@ const run=(g,limit=7000)=>{
  assert.equal(g.goals.length,g.stats[0].goals+g.stats[1].goals);
  return g;
 };
-test('16 distinct role behaviours and eligible choices by natural position',()=>{
- assert.equal(Object.keys(ROLES).length,16);
+test('17 distinct role behaviours and eligible choices by natural position',()=>{
+ assert.equal(Object.keys(ROLES).length,17);
  assert.ok(eligibleRoles('ST').includes('falso_nueve'));
+ assert.ok(eligibleRoles('ST').includes('cazagoles'));
  assert.ok(eligibleRoles('ST').includes('delantero_avanzado'));
  assert.ok(!eligibleRoles('CB').includes('falso_nueve'));
  assert.ok(eligibleRoles('CM').includes('box_to_box'));
