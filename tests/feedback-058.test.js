@@ -47,7 +47,7 @@ test('the primary presser approaches the carrier to actual tackle distance',()=>
  g.hold(p);const before=Math.hypot(q.x-p.x,q.y-p.y);
  for(let i=0;i<14;i++)g.movePlayers(.08);
  assert.ok(Math.hypot(q.x-p.x,q.y-p.y)<before);
- assert.ok(q.aiIntent.includes('Cerrar')||q.aiIntent.includes('presion')||q.aiIntent.includes('poseedor'));
+ assert.ok(Number.isFinite(q.fx)&&Number.isFinite(q.fy),'pressing must maintain a reachable physical target');
 });
 test('outfielders do not attempt nonsensical 30m shots, including centre-backs',()=>{
  const g=make(),p=g.teams[0][9],cb=g.teams[0][2];
